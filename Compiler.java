@@ -1,4 +1,7 @@
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Scanner;
 
 enum Token {
     INT("int"),
@@ -41,6 +44,33 @@ enum Token {
 
     Token(String name) {
         this.name = name;
+    }
+}
+
+enum ConstType {
+    INT,
+    HEX,
+    CHAR,
+    FLOAT,
+    STRING;
+}
+
+class CompilerError extends Throwable {
+    private int line;
+    private String message;
+
+    public CompilerError(String message, int line) {
+        this.line = line;
+        this.message = message;
+    }
+
+    @Override
+    public String toString() {
+        return line+'\n'+message+'\n';
+    }
+
+    public void print() {
+        System.out.print(this);
     }
 }
 
@@ -146,12 +176,138 @@ class Symbol {
     }
 }
 
+class SyntaxAnalyzer {
+    LexicalAnalyzer lexicalAnalyzer;
+
+    public SyntaxAnalyzer(LexicalAnalyzer lexicalAnalyzer) throws CompilerError {
+        this.lexicalAnalyzer = lexicalAnalyzer;
+
+        //Teste
+        LexicalRegister register = lexicalAnalyzer.getNextToken();
+        register.print();
+    }
+}
+
+class LexicalAnalyzer {
+
+    private int position = 0;
+    private int currentLine = 1;
+    private Code code;
+    private final int finalState = 4;
+    private Character lastCharacter = null;
+
+
+    private static final HashSet<Character> acceptedCharacters =  new HashSet<Character>(Arrays.asList( '0', '1', '2', '3',
+            '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
+            'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z','a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
+            'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',' ', '_', '.', ',', ';', ':', '(', ')',
+            '[', ']', '{', '}', '+', '-', '\"','\'','/', '|', '\\', '&', '%', '!', '?', '>', '<', '=', '\n', '\r' ));
+
+
+    public LexicalAnalyzer(Code code) {
+        this.code = code;
+    }
+
+    public LexicalRegister getNextToken() throws CompilerError {
+        int currentState = 0;
+        char currentCharacter;
+        String currentLexeme = "";
+
+        if(lastCharacter == null) {
+            currentCharacter = code.code.charAt(position);
+        }
+        else{
+            currentCharacter = lastCharacter;
+            position--;
+        }
+
+        while(currentState != finalState && position < code.code.length()) {
+            if(!verifyIsValidCharacter(currentCharacter)){
+                throw new CompilerError("caractere invalido.", currentLine);
+            }
+
+            if(currentCharacter == '\n'){
+                currentLine++;
+            }
+
+            switch (currentState) {
+
+            }
+            position++;
+            currentCharacter = code.code.charAt(position);
+        }
+
+        return null;
+    }
+
+    private boolean verifyIsValidCharacter(char c){
+        return acceptedCharacters.contains(c);
+    }
+}
+
+class LexicalRegister {
+    Token token;
+    String lexeme;
+    SymbolTableSearchResult positionInTable;
+    ConstType constType;
+    int size;
+
+    public LexicalRegister(Token token, String lexeme, SymbolTableSearchResult positionInTable, ConstType constType, int size) {
+        this.token = token;
+        this.lexeme = lexeme;
+        this.positionInTable = positionInTable;
+        this.constType = constType;
+        this.size = size;
+    }
+
+    @Override
+    public String toString() {
+        return "LexicalRegister{" +
+                "token=" + token +
+                ", lexeme='" + lexeme + '\'' +
+                ", positionInTable=" + positionInTable +
+                ", constType=" + constType +
+                ", size=" + size +
+                '}';
+    }
+
+    public void print() {
+        System.out.println(this);
+    }
+}
+
+class Code {
+    String code = "";
+    int numOfLines = 1;
+
+    public void read(){
+        Scanner scanner = new Scanner(System.in);
+        String currentLine = "";
+
+        while(scanner.hasNextLine()&&(currentLine = scanner.nextLine()) != null) {
+            code+=currentLine + '\n';
+            numOfLines++;
+        }
+        scanner.close();
+    }
+}
+
 public class Compiler {
-    public static void main(String args[]) {
-        SymbolTable st = new SymbolTable();
-        st.printTable();
-        st.insert(new Symbol(Token.ELSE, "sele"));
-        st.search("sele").print();
+    public static void main(String[] args) {
+        try{
+            SyntaxAnalyzer syntaxAnalyzer = configureSyntaxAnalyzer();
+        }
+        catch (CompilerError compilerError){
+            compilerError.print();
+        }
+
+    }
+
+    public static SyntaxAnalyzer configureSyntaxAnalyzer() throws CompilerError{
+        Code code = new Code();
+        LexicalAnalyzer lexicalAnalyzer = new LexicalAnalyzer(code);
+
+        return new SyntaxAnalyzer(lexicalAnalyzer);
     }
 }
 
