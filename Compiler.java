@@ -13,7 +13,7 @@ enum Token {
     AND("&&"),
     OR("||"),
     NEGATION("!"),
-    ATRIBUITION("<-"),
+    ATTRIBUTION("<-"),
     EQUAL("="),
     OPEN_PARENTESIS("("),
     CLOSE_PARENTESIS(")"),
@@ -56,8 +56,8 @@ enum ConstType {
 }
 
 class CompilerError extends Throwable {
-    private int line;
-    private String message;
+    private final int line;
+    private final String message;
 
     public CompilerError(String message, int line) {
         this.line = line;
@@ -106,7 +106,7 @@ class SymbolTable {
         int positionInHash= hash(symbol.lexeme);
 
         if (table[positionInHash] == null) {
-            table[positionInHash] = new ArrayList<Symbol>();
+            table[positionInHash] = new ArrayList<>();
         }
 
         int addedIndex = table[positionInHash].size();
@@ -140,7 +140,7 @@ class SymbolTable {
     public void printTable() {
         for (ArrayList<Symbol> symbols: table) {
             if(symbols != null)
-                System.out.println(symbols.toString());
+                System.out.println(symbols);
         }
     }
 }
@@ -203,10 +203,9 @@ class LexicalAnalyzer {
 
     private int position = 0;
     private int currentLine = 1;
-    private Reader reader;
-    private final int finalState = 4;
+    private final Reader reader;
     private Character lastCharacter = null;
-    private SymbolTable symbolTable = SymbolTable.getInstance();
+    private final SymbolTable symbolTable = SymbolTable.getInstance();
 
 
     private static final HashSet<Character> acceptedCharacters =  new HashSet<Character>(Arrays.asList( '0', '1', '2', '3',
@@ -236,6 +235,7 @@ class LexicalAnalyzer {
             position--;
         }
 
+        int finalState = 4;
         while(currentState != finalState && position < reader.code.length()) {
             if(!verifyIsValidCharacter(currentCharacter)){
                 throw new CompilerError("caractere invalido.", currentLine);
@@ -295,6 +295,14 @@ class LexicalAnalyzer {
                         throw new CompilerError("lexema nao identificado" + currentLexeme, currentLine);
                     }
                     break;
+                case 12:
+                    if(isCharDigit(currentCharacter)) {
+                        currentState = 10;
+                    }
+                    else {
+                        lastCharacter = currentCharacter;
+                        currentState = 4;
+                    }
                 default:
             }
             currentLexeme += currentCharacter;
