@@ -291,24 +291,29 @@ class LexicalAnalyzer {
                     else if(isCharLetter(currentCharacter) || currentCharacter == '_' ){
                         currentState = 19;
                     }
-                    break;
-                case 4:
-                    SymbolTableSearchResult result = null;
-                    if(constType == null) {
-                        result = symbolTable.search(currentLexeme);
-                        if(result == null){
-                            result = symbolTable.insert(new Symbol(Token.ID, currentLexeme));
-                        }
+                    else {
+                        throw new CompilerError("lexema nao identificado" + currentLexeme, currentLine);
                     }
-                    return new LexicalRegister(result, constType, constSize);
+                    break;
                 default:
             }
             currentLexeme += currentCharacter;
             position++;
             currentCharacter = reader.code.charAt(position);
         }
+        //Final State
+        SymbolTableSearchResult result = null;
+        if(constType == null) {
+            result = symbolTable.search(currentLexeme);
+            if(result == null){
+                result = symbolTable.insert(new Symbol(Token.ID, currentLexeme));
+            }
+        }
+        return new LexicalRegister(result, constType, constSize);
+    }
 
-        return null;
+    private boolean isCharDigit(char c) {
+        return c>='0' && c<='9';
     }
 
     private boolean isCharLetter(char c){
