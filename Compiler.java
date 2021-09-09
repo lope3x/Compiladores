@@ -75,12 +75,20 @@ class CompilerError extends Throwable {
 }
 
 class SymbolTable {
+    private static SymbolTable instance;
     final int size = 1000;
     ArrayList<Symbol>[] table;
 
-    SymbolTable() {
+    private SymbolTable() {
         table = new ArrayList[size];
         startTable();
+    }
+
+    public static SymbolTable getInstance() {
+        if(instance == null) {
+            instance = new SymbolTable();
+        }
+        return instance;
     }
 
     public void startTable() {
@@ -104,7 +112,7 @@ class SymbolTable {
         int addedIndex = table[positionInHash].size();
         table[positionInHash].add(symbol);
 
-        return new SymbolTableSearchResult(positionInHash, addedIndex);
+        return new SymbolTableSearchResult(positionInHash, addedIndex, symbol);
     }
 
     public int hash(String lexeme) {
@@ -120,8 +128,9 @@ class SymbolTable {
         ArrayList<Symbol> lexemeList = table[positionInHash];
         if(lexemeList != null) {
             for(int i=0;i<lexemeList.size(); i++) {
-                if(lexemeList.get(i).lexeme.equals(lexeme)) {
-                    return new SymbolTableSearchResult(positionInHash, i);
+                Symbol symbol = lexemeList.get(i);
+                if(symbol.lexeme.equals(lexeme)) {
+                    return new SymbolTableSearchResult(positionInHash, i, symbol);
                 }
             }
         }
@@ -139,10 +148,12 @@ class SymbolTable {
 class SymbolTableSearchResult {
     int positionInHash;
     int positionInArrayList;
+    Symbol symbol;
 
-    SymbolTableSearchResult(int positionInHash, int positionInArrayList) {
+    SymbolTableSearchResult(int positionInHash, int positionInArrayList, Symbol symbol) {
         this.positionInHash = positionInHash;
         this.positionInArrayList = positionInArrayList;
+        this.symbol = symbol;
     }
 
     @Override
@@ -192,9 +203,10 @@ class LexicalAnalyzer {
 
     private int position = 0;
     private int currentLine = 1;
-    private Code code;
+    private Reader reader;
     private final int finalState = 4;
     private Character lastCharacter = null;
+    private SymbolTable symbolTable = SymbolTable.getInstance();
 
 
     private static final HashSet<Character> acceptedCharacters =  new HashSet<Character>(Arrays.asList( '0', '1', '2', '3',
@@ -204,24 +216,27 @@ class LexicalAnalyzer {
             '[', ']', '{', '}', '+', '-', '\"','\'','/', '|', '\\', '&', '%', '!', '?', '>', '<', '=', '\n', '\r' ));
 
 
-    public LexicalAnalyzer(Code code) {
-        this.code = code;
+    public LexicalAnalyzer(Reader reader) {
+        this.reader = reader;
+        reader.readInputCode();
     }
 
     public LexicalRegister getNextToken() throws CompilerError {
         int currentState = 0;
         char currentCharacter;
         String currentLexeme = "";
+        ConstType constType = null;
+        Integer constSize = null;
 
         if(lastCharacter == null) {
-            currentCharacter = code.code.charAt(position);
+            currentCharacter = reader.code.charAt(position);
         }
         else{
             currentCharacter = lastCharacter;
             position--;
         }
 
-        while(currentState != finalState && position < code.code.length()) {
+        while(currentState != finalState && position < reader.code.length()) {
             if(!verifyIsValidCharacter(currentCharacter)){
                 throw new CompilerError("caractere invalido.", currentLine);
             }
@@ -231,13 +246,73 @@ class LexicalAnalyzer {
             }
 
             switch (currentState) {
-
+                case 0:
+                    if(currentCharacter == ' ' || currentCharacter == '\n' || currentCharacter == '\r') {
+                        currentState = 0;
+                    }
+                    else if(currentCharacter == '0') {
+                        currentState = 16;
+                    }
+                    else if(currentCharacter == '/') {
+                        currentState = 1;
+                    }
+                    else if(currentCharacter == '>') {
+                        currentState = 8;
+                    }
+                    else if(currentCharacter == '&') {
+                        currentState = 9;
+                    }
+                    else if(currentCharacter == '<') {
+                        currentState = 7;
+                    }
+                    else if(currentCharacter == '*' || currentCharacter == '+' || currentCharacter == '=' || currentCharacter == ','
+                            || currentCharacter == ';' || currentCharacter == '(' || currentCharacter == ')' || currentCharacter == '{' ||
+                            currentCharacter == '}' || currentCharacter == '[' || currentCharacter == ']'){
+                        currentState = 4;
+                    }
+                    else if(currentCharacter >= '1' && currentCharacter <= '9'){
+                        currentState = 10;
+                    }
+                    else if(currentCharacter == '|') {
+                        currentState = 5;
+                    }
+                    else if(currentCharacter == '-'){
+                        currentState = 12;
+                    }
+                    else if(currentCharacter == '!'){
+                        currentState = 6;
+                    }
+                    else if(currentCharacter == '\"'){
+                        currentState = 15;
+                    }
+                    else if(currentCharacter == '\''){
+                        currentState = 13;
+                    }
+                    else if(isCharLetter(currentCharacter) || currentCharacter == '_' ){
+                        currentState = 19;
+                    }
+                    break;
+                case 4:
+                    SymbolTableSearchResult result = null;
+                    if(constType == null) {
+                        result = symbolTable.search(currentLexeme);
+                        if(result == null){
+                            result = symbolTable.insert(new Symbol(Token.ID, currentLexeme));
+                        }
+                    }
+                    return new LexicalRegister(result, constType, constSize);
+                default:
             }
+            currentLexeme += currentCharacter;
             position++;
-            currentCharacter = code.code.charAt(position);
+            currentCharacter = reader.code.charAt(position);
         }
 
         return null;
+    }
+
+    private boolean isCharLetter(char c){
+        return (c >= 'a' && c<='z') || (c>='A' && c<='Z');
     }
 
     private boolean verifyIsValidCharacter(char c){
@@ -246,16 +321,12 @@ class LexicalAnalyzer {
 }
 
 class LexicalRegister {
-    Token token;
-    String lexeme;
-    SymbolTableSearchResult positionInTable;
+    SymbolTableSearchResult symbolInTable;
     ConstType constType;
-    int size;
+    Integer size;
 
-    public LexicalRegister(Token token, String lexeme, SymbolTableSearchResult positionInTable, ConstType constType, int size) {
-        this.token = token;
-        this.lexeme = lexeme;
-        this.positionInTable = positionInTable;
+    public LexicalRegister(SymbolTableSearchResult symbolInTable, ConstType constType, Integer size) {
+        this.symbolInTable = symbolInTable;
         this.constType = constType;
         this.size = size;
     }
@@ -263,9 +334,7 @@ class LexicalRegister {
     @Override
     public String toString() {
         return "LexicalRegister{" +
-                "token=" + token +
-                ", lexeme='" + lexeme + '\'' +
-                ", positionInTable=" + positionInTable +
+                "symbolInTable=" + symbolInTable +
                 ", constType=" + constType +
                 ", size=" + size +
                 '}';
@@ -276,11 +345,11 @@ class LexicalRegister {
     }
 }
 
-class Code {
+class Reader {
     String code = "";
     int numOfLines = 1;
 
-    public void read(){
+    public void readInputCode(){
         Scanner scanner = new Scanner(System.in);
         String currentLine = "";
 
@@ -304,8 +373,8 @@ public class Compiler {
     }
 
     public static SyntaxAnalyzer configureSyntaxAnalyzer() throws CompilerError{
-        Code code = new Code();
-        LexicalAnalyzer lexicalAnalyzer = new LexicalAnalyzer(code);
+        Reader reader = new Reader();
+        LexicalAnalyzer lexicalAnalyzer = new LexicalAnalyzer(reader);
 
         return new SyntaxAnalyzer(lexicalAnalyzer);
     }
