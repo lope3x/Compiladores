@@ -212,14 +212,14 @@ class SyntaxAnalyzer {
         //Teste
         LexicalRegister register = lexicalAnalyzer.getNextToken();
         register.print();
-//        register = lexicalAnalyzer.getNextToken();
-//        register.print();
-//        register = lexicalAnalyzer.getNextToken();
-//        register.print();
-//        register = lexicalAnalyzer.getNextToken();
-//        register.print();
-//        register = lexicalAnalyzer.getNextToken();
-//        register.print();
+        register = lexicalAnalyzer.getNextToken();
+        register.print();
+        register = lexicalAnalyzer.getNextToken();
+        register.print();
+        register = lexicalAnalyzer.getNextToken();
+        register.print();
+        register = lexicalAnalyzer.getNextToken();
+        register.print();
     }
 }
 
@@ -390,21 +390,18 @@ class LexicalAnalyzer {
                     break;
                 default:
             }
-            if(currentState != 0 && currentCharacter != ' ')
+            if(currentState != 0 && currentCharacter != ' ' && lastCharacter == null)
                 currentLexeme += currentCharacter;
             position++;
             currentCharacter = reader.code.charAt(position);
         }
         //Final State
+
+        return createLexicalRegister(currentLexeme, constType, constSize);
+    }
+
+    private LexicalRegister createLexicalRegister(String currentLexeme, ConstType constType, Integer constSize) {
         SymbolTableSearchResult result = null;
-        /*
-        * Size das constantes
-        * int = 4
-        * char = 1
-        * float = 4
-        * string = length da string
-        * hex = 1
-        * */
         Symbol symbol;
         if(constType == null) {
             result = symbolTable.search(currentLexeme);
@@ -419,7 +416,7 @@ class LexicalAnalyzer {
         else {
             symbol = new Symbol(Token.CONST, currentLexeme);
         }
-        return new LexicalRegister(result, symbol,constType, constSize);
+        return new LexicalRegister(result, symbol, constType, constSize);
     }
 
     private boolean isCharHexadecimal(char c) {
