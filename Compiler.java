@@ -390,7 +390,8 @@ class LexicalAnalyzer {
                     break;
                 default:
             }
-            currentLexeme += currentCharacter;
+            if(currentState != 0 && currentCharacter != ' ')
+                currentLexeme += currentCharacter;
             position++;
             currentCharacter = reader.code.charAt(position);
         }
