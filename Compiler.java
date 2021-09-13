@@ -54,9 +54,20 @@ enum ConstType {
     FLOAT,
     STRING;
 }
-
+/*
+ * Size das constantes
+ * int = 4
+ * char = 1
+ * float = 4
+ * string = length da string
+ * hex = 1
+ * */
 class Constants {
-    public static int DecimalPrecision = 5;
+    public static int DecimalPrecision = 6;
+    public static int IntBytesSize = 4;
+    public static int CharBytesSize = 1;
+    public static int FloatBytesSize = 4;
+    public static int HexBytesSize = 1;
 }
 
 class CompilerError extends Throwable {
@@ -70,7 +81,7 @@ class CompilerError extends Throwable {
 
     @Override
     public String toString() {
-        return line+'\n'+message+'\n';
+        return line+"\n"+message+"\n";
     }
 
     public void print() {
@@ -165,6 +176,7 @@ class SymbolTableSearchResult {
         return "SymbolTableSearchResult{" +
                 "positionInHash=" + positionInHash +
                 ", positionInArrayList=" + positionInArrayList +
+                ", symbol=" + symbol +
                 '}';
     }
 
@@ -200,6 +212,14 @@ class SyntaxAnalyzer {
         //Teste
         LexicalRegister register = lexicalAnalyzer.getNextToken();
         register.print();
+//        register = lexicalAnalyzer.getNextToken();
+//        register.print();
+//        register = lexicalAnalyzer.getNextToken();
+//        register.print();
+//        register = lexicalAnalyzer.getNextToken();
+//        register.print();
+//        register = lexicalAnalyzer.getNextToken();
+//        register.print();
     }
 }
 
@@ -232,7 +252,7 @@ class LexicalAnalyzer {
         ConstType constType = null;
         Integer constSize = null;
 
-        if(lastCharacter == null) {
+        if(lastCharacter == null || lastCharacter == '\n') {
             currentCharacter = reader.code.charAt(position);
         }
         else{
@@ -310,6 +330,8 @@ class LexicalAnalyzer {
                     }
                     else {
                         lastCharacter = currentCharacter;
+                        constType = ConstType.INT;
+                        constSize = Constants.IntBytesSize;
                         currentState = 4;
                     }
                     break;
@@ -319,9 +341,12 @@ class LexicalAnalyzer {
                     }
                     else if(isCharDigit(currentCharacter)) {
                         currentState = 11;
+                        numberOfDecimal++;
                     }
                     else {
                         lastCharacter = currentCharacter;
+                        constType = ConstType.FLOAT;
+                        constSize = Constants.FloatBytesSize;
                         currentState = 4;
                     }
                     break;
@@ -335,7 +360,7 @@ class LexicalAnalyzer {
                     }
                     break;
                 case 16:
-                    if(currentCharacter == 'X'){
+                    if(currentCharacter == 'x'){
                         currentState = 17;
                     }
                     else if(isCharDigit(currentCharacter)){
@@ -355,6 +380,8 @@ class LexicalAnalyzer {
                     break;
                 case 18:
                     if(isCharHexadecimal(currentCharacter)){
+                        constType = ConstType.HEX;
+                        constSize = Constants.HexBytesSize;
                         currentState = 4;
                     }
                     else {
@@ -369,13 +396,29 @@ class LexicalAnalyzer {
         }
         //Final State
         SymbolTableSearchResult result = null;
+        /*
+        * Size das constantes
+        * int = 4
+        * char = 1
+        * float = 4
+        * string = length da string
+        * hex = 1
+        * */
+        Symbol symbol;
         if(constType == null) {
             result = symbolTable.search(currentLexeme);
             if(result == null){
-                result = symbolTable.insert(new Symbol(Token.ID, currentLexeme));
+                symbol = new Symbol(Token.ID, currentLexeme);
+                result = symbolTable.insert(symbol);
+            }
+            else {
+                symbol = result.symbol;
             }
         }
-        return new LexicalRegister(result, constType, constSize);
+        else {
+            symbol = new Symbol(Token.CONST, currentLexeme);
+        }
+        return new LexicalRegister(result, symbol,constType, constSize);
     }
 
     private boolean isCharHexadecimal(char c) {
@@ -397,11 +440,13 @@ class LexicalAnalyzer {
 
 class LexicalRegister {
     SymbolTableSearchResult symbolInTable;
+    Symbol symbol;
     ConstType constType;
     Integer size;
 
-    public LexicalRegister(SymbolTableSearchResult symbolInTable, ConstType constType, Integer size) {
+    public LexicalRegister(SymbolTableSearchResult symbolInTable, Symbol symbol, ConstType constType, Integer size) {
         this.symbolInTable = symbolInTable;
+        this.symbol = symbol;
         this.constType = constType;
         this.size = size;
     }
@@ -410,6 +455,7 @@ class LexicalRegister {
     public String toString() {
         return "LexicalRegister{" +
                 "symbolInTable=" + symbolInTable +
+                ", symbol=" + symbol +
                 ", constType=" + constType +
                 ", size=" + size +
                 '}';
@@ -432,6 +478,7 @@ class Reader {
             code+=currentLine + '\n';
             numOfLines++;
         }
+        code +="\0";
         scanner.close();
     }
 }
