@@ -55,6 +55,10 @@ enum ConstType {
     STRING;
 }
 
+class Constants {
+    public static int DecimalPrecision = 5;
+}
+
 class CompilerError extends Throwable {
     private final int line;
     private final String message;
@@ -222,6 +226,7 @@ class LexicalAnalyzer {
 
     public LexicalRegister getNextToken() throws CompilerError {
         int currentState = 0;
+        int numberOfDecimal = 0;
         char currentCharacter;
         String currentLexeme = "";
         ConstType constType = null;
@@ -232,6 +237,7 @@ class LexicalAnalyzer {
         }
         else{
             currentCharacter = lastCharacter;
+            lastCharacter = null;
             position--;
         }
 
@@ -292,7 +298,31 @@ class LexicalAnalyzer {
                         currentState = 19;
                     }
                     else {
-                        throw new CompilerError("lexema nao identificado" + currentLexeme, currentLine);
+                        throw new CompilerError("lexema nao identificado [" + currentLexeme + "]", currentLine);
+                    }
+                    break;
+                case 10:
+                    if(isCharDigit(currentCharacter)) {
+                        currentState = 10;
+                    }
+                    else if(currentCharacter =='.') {
+                        currentState = 11;
+                    }
+                    else {
+                        lastCharacter = currentCharacter;
+                        currentState = 4;
+                    }
+                    break;
+                case 11:
+                    if(numberOfDecimal > Constants.DecimalPrecision){
+                        throw new CompilerError("lexema nao identificado [" + currentLexeme + "]", currentLine);
+                    }
+                    else if(isCharDigit(currentCharacter)) {
+                        currentState = 11;
+                    }
+                    else {
+                        lastCharacter = currentCharacter;
+                        currentState = 4;
                     }
                     break;
                 case 12:
@@ -303,6 +333,34 @@ class LexicalAnalyzer {
                         lastCharacter = currentCharacter;
                         currentState = 4;
                     }
+                    break;
+                case 16:
+                    if(currentCharacter == 'X'){
+                        currentState = 17;
+                    }
+                    else if(isCharDigit(currentCharacter)){
+                        currentState = 10;
+                    }
+                    else {
+                        throw new CompilerError("lexema nao identificado [" + currentLexeme + "]", currentLine);
+                    }
+                    break;
+                case 17:
+                    if(isCharHexadecimal(currentCharacter)){
+                        currentState = 18;
+                    }
+                    else {
+                        throw new CompilerError("lexema nao identificado [" + currentLexeme + "]", currentLine);
+                    }
+                    break;
+                case 18:
+                    if(isCharHexadecimal(currentCharacter)){
+                        currentState = 4;
+                    }
+                    else {
+                        throw new CompilerError("lexema nao identificado [" + currentLexeme + "]", currentLine);
+                    }
+                    break;
                 default:
             }
             currentLexeme += currentCharacter;
@@ -318,6 +376,10 @@ class LexicalAnalyzer {
             }
         }
         return new LexicalRegister(result, constType, constSize);
+    }
+
+    private boolean isCharHexadecimal(char c) {
+       return isCharDigit(c) || c >= 'A' && c <= 'F';
     }
 
     private boolean isCharDigit(char c) {
