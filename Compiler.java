@@ -321,6 +321,19 @@ class LexicalAnalyzer {
                         throw new CompilerError("lexema nao identificado [" + currentLexeme + "]", currentLine);
                     }
                     break;
+                case 8:
+                    if(currentCharacter != '=') {
+                        lastCharacter = currentCharacter;
+                    }
+                    currentState = 4;
+                    break;
+                case 9:
+                    if(currentCharacter == '&') {
+                        currentState = 4;
+                    } else {
+                        throw new CompilerError("lexema nao identificado [" + currentLexeme + "]", currentLine);
+                    }
+                    break;
                 case 10:
                     if(isCharDigit(currentCharacter)) {
                         currentState = 10;
@@ -359,6 +372,23 @@ class LexicalAnalyzer {
                         currentState = 4;
                     }
                     break;
+                case 13:
+                    currentState = 14;
+                    break;
+                case 14:
+                    if(currentCharacter == '\'') {
+                        currentState = 4;
+                    } else {
+                        throw new CompilerError("lexema nao identificado [" + currentLexeme + "]", currentLine);
+                    }
+                    break;
+                case 15:
+                    if(currentCharacter == '\"') {
+                        currentState = 4;
+                    } else if(currentCharacter == '\n' || currentCharacter == '\r' || currentCharacter == '$') {
+                        throw new CompilerError("lexema nao identificado [" + currentLexeme + "]", currentLine);
+                    }
+                    break;
                 case 16:
                     if(currentCharacter == 'x'){
                         currentState = 17;
@@ -386,6 +416,12 @@ class LexicalAnalyzer {
                     }
                     else {
                         throw new CompilerError("lexema nao identificado [" + currentLexeme + "]", currentLine);
+                    }
+                    break;
+                case 19:
+                    if(!isCharLetter(currentCharacter) && !isCharDigit(currentCharacter) && currentCharacter != '_' && currentCharacter != '.') {
+                        lastCharacter = currentCharacter;
+                        currentState = 4;
                     }
                     break;
                 default:
