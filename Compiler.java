@@ -211,9 +211,10 @@ class SyntaxAnalyzer {
         this.lexicalAnalyzer = lexicalAnalyzer;
 
         Reader reader = lexicalAnalyzer.reader;
-        while(reader.position < reader.code.length()-1){
+        while(reader.position < reader.code.length()){
             LexicalRegister register = lexicalAnalyzer.getNextToken();
-            register.print();
+            if(register!=null)
+                register.print();
         }
         System.out.println(lexicalAnalyzer.currentLine + " linhas compiladas");
     }
@@ -227,11 +228,11 @@ class LexicalAnalyzer {
     private final SymbolTable symbolTable = SymbolTable.getInstance();
 
 
-    private static final HashSet<Character> acceptedCharacters =  new HashSet<Character>(Arrays.asList( '0', '1', '2', '3',
+    private static final HashSet<Character> acceptedCharacters = new HashSet<>(Arrays.asList('0', '1', '2', '3',
             '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
             'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z','a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
             'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',' ', '_', '.', ',', ';', ':', '(', ')',
-            '[', ']', '{', '}', '+', '-', '*', '\"','\'','/', '|', '\\', '&', '%', '!', '?', '>', '<', '=', '\n', '\r' ));
+            '[', ']', '{', '}', '+', '-', '*', '\"','\'','/', '|', '\\', '&', '%', '!', '?', '>', '<', '=', '\n', '\r', '\0' ));
 
 
     public LexicalAnalyzer(Reader reader) {
@@ -262,7 +263,7 @@ class LexicalAnalyzer {
 
         int finalState = 4;
 
-        while(currentState != finalState && reader.position < reader.code.length()-1) {
+        while(currentState != finalState && reader.position < reader.code.length()) {
             if(!verifyIsValidCharacter(currentCharacter)){
                 throw new CompilerError("caractere invalido.", currentLine);
             }
@@ -318,8 +319,11 @@ class LexicalAnalyzer {
                     else if(isCharLetter(currentCharacter) || currentCharacter == '_' ){
                         currentState = 19;
                     }
+                    else if(currentCharacter == '\0'){
+                        currentCharacter = null;
+                    }
                     else {
-                        throw new CompilerError("lexema nao identificado [" + currentLexeme + "]", currentLine);
+                        throw new CompilerError("lexema nao identificado [" + currentLexeme+currentCharacter + "]", currentLine);
                     }
                     break;
                 case 1:
@@ -336,6 +340,9 @@ class LexicalAnalyzer {
                 case 2:
                     if(currentCharacter == '*') {
                         currentState = 3;
+                    }
+                    else if(currentCharacter == '\0'){
+                        throw new CompilerError("fim de Arquivo nao esperado.", currentLine);
                     }
                     currentCharacter = null;
                     break;
@@ -444,7 +451,10 @@ class LexicalAnalyzer {
                         currentState = 10;
                     }
                     else {
-                        throw new CompilerError("lexema nao identificado [" + currentLexeme + "]", currentLine);
+                        currentState = 4;
+                        lastCharacter = currentCharacter;
+                        constType = ConstType.INT;
+                        constSize = Constants.IntBytesSize;
                     }
                     break;
                 case 17:
@@ -477,8 +487,12 @@ class LexicalAnalyzer {
             if(currentCharacter != null && lastCharacter == null)
                 currentLexeme += currentCharacter;
             reader.position++;
-            currentCharacter = reader.code.charAt(reader.position);
+            if(reader.position < reader.code.length())
+                currentCharacter = reader.code.charAt(reader.position);
         }
+
+        if(currentLexeme.isEmpty())
+            return null;
 
         return createLexicalRegister(currentLexeme, constType, constSize);
     }
@@ -560,6 +574,7 @@ class Reader {
             code +=currentLine + '\n';
             numOfLines++;
         }
+        code+='\0';
         scanner.close();
     }
 }
