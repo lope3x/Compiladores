@@ -1,2 +1,15 @@
--1.555555 0x55 94324 -1
-vai_da_error_aquí
+/* Exemplo de Programa na linguagem L */
+
+int n<-1;
+string nome;
+const MAXITER=10;
+
+write("Digite seu nome: ");
+readln(nome);
+
+float percentual;
+while n<=MAXITER {
+  percentual<-float(n)/MAXITER;
+  writeln(percentual,": Ola' ",nome);
+  n<-n+1;
+}

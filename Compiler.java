@@ -7,6 +7,7 @@ enum Token {
     INT("int"),
     CHAR("char"),
     WHILE("while"),
+    STRING("string"),
     IF("if"),
     FLOAT("float"),
     ELSE("else"),
@@ -209,25 +210,19 @@ class SyntaxAnalyzer {
     public SyntaxAnalyzer(LexicalAnalyzer lexicalAnalyzer) throws CompilerError {
         this.lexicalAnalyzer = lexicalAnalyzer;
 
-        //Teste
-        LexicalRegister register = lexicalAnalyzer.getNextToken();
-        register.print();
-        register = lexicalAnalyzer.getNextToken();
-        register.print();
-        register = lexicalAnalyzer.getNextToken();
-        register.print();
-        register = lexicalAnalyzer.getNextToken();
-        register.print();
-        register = lexicalAnalyzer.getNextToken();
-        register.print();
+        Reader reader = lexicalAnalyzer.reader;
+        while(reader.position < reader.code.length()-1){
+            LexicalRegister register = lexicalAnalyzer.getNextToken();
+            register.print();
+        }
+        System.out.println(lexicalAnalyzer.currentLine + " linhas compiladas");
     }
 }
 
 class LexicalAnalyzer {
 
-    private int position = 0;
-    private int currentLine = 1;
-    private final Reader reader;
+    int currentLine = 1;
+    final Reader reader;
     private Character lastCharacter = null;
     private final SymbolTable symbolTable = SymbolTable.getInstance();
 
@@ -236,7 +231,7 @@ class LexicalAnalyzer {
             '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
             'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z','a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
             'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',' ', '_', '.', ',', ';', ':', '(', ')',
-            '[', ']', '{', '}', '+', '-', '\"','\'','/', '|', '\\', '&', '%', '!', '?', '>', '<', '=', '\n', '\r' ));
+            '[', ']', '{', '}', '+', '-', '*', '\"','\'','/', '|', '\\', '&', '%', '!', '?', '>', '<', '=', '\n', '\r' ));
 
 
     public LexicalAnalyzer(Reader reader) {
@@ -247,27 +242,32 @@ class LexicalAnalyzer {
     public LexicalRegister getNextToken() throws CompilerError {
         int currentState = 0;
         int numberOfDecimal = 0;
-        char currentCharacter;
+        Character currentCharacter;
         String currentLexeme = "";
         ConstType constType = null;
         Integer constSize = null;
 
-        if(lastCharacter == null || lastCharacter == '\n') {
-            currentCharacter = reader.code.charAt(position);
+        if(lastCharacter == null) {
+            currentCharacter = reader.code.charAt(reader.position);
+        }
+        else if (lastCharacter == '\n' || lastCharacter == '\r') {
+            currentCharacter = reader.code.charAt(reader.position);
+            lastCharacter = null;
         }
         else{
             currentCharacter = lastCharacter;
             lastCharacter = null;
-            position--;
+            reader.position--;
         }
 
         int finalState = 4;
-        while(currentState != finalState && position < reader.code.length()) {
+
+        while(currentState != finalState && reader.position < reader.code.length()-1) {
             if(!verifyIsValidCharacter(currentCharacter)){
                 throw new CompilerError("caractere invalido.", currentLine);
             }
 
-            if(currentCharacter == '\n'){
+            if(currentCharacter == '\n' || currentCharacter == '\r'){
                 currentLine++;
             }
 
@@ -275,6 +275,7 @@ class LexicalAnalyzer {
                 case 0:
                     if(currentCharacter == ' ' || currentCharacter == '\n' || currentCharacter == '\r') {
                         currentState = 0;
+                        currentCharacter = null;
                     }
                     else if(currentCharacter == '0') {
                         currentState = 16;
@@ -319,6 +320,50 @@ class LexicalAnalyzer {
                     }
                     else {
                         throw new CompilerError("lexema nao identificado [" + currentLexeme + "]", currentLine);
+                    }
+                    break;
+                case 1:
+                    if(currentCharacter == '*') {
+                        currentState = 2;
+                        currentCharacter = null;
+                        currentLexeme = "";
+                    }
+                    else {
+                        lastCharacter = currentCharacter;
+                        currentState = 4;
+                    }
+                    break;
+                case 2:
+                    if(currentCharacter == '*') {
+                        currentState = 3;
+                    }
+                    currentCharacter = null;
+                    break;
+                case 3:
+                    if(currentCharacter == '/') {
+                        currentState = 0;
+                        currentCharacter = null;
+                    }
+                    else {
+                        currentCharacter = null;
+                        currentState = 2;
+                    }
+                    break;
+                case 5:
+                    if(currentCharacter == '|'){
+                        currentState = 4;
+                    }
+                    break;
+                case 6:
+                    currentState = 4;
+                    if (currentCharacter != '=') {
+                        lastCharacter = currentCharacter;
+                    }
+                    break;
+                case 7:
+                    currentState  = 4;
+                    if (currentCharacter != '-' && currentCharacter != '=') {
+                        lastCharacter = currentCharacter;
                     }
                     break;
                 case 8:
@@ -385,6 +430,8 @@ class LexicalAnalyzer {
                 case 15:
                     if(currentCharacter == '\"') {
                         currentState = 4;
+                        constType = ConstType.STRING;
+                        constSize = currentLexeme.length()-1;
                     } else if(currentCharacter == '\n' || currentCharacter == '\r' || currentCharacter == '$') {
                         throw new CompilerError("lexema nao identificado [" + currentLexeme + "]", currentLine);
                     }
@@ -426,12 +473,12 @@ class LexicalAnalyzer {
                     break;
                 default:
             }
-            if(currentState != 0 && currentCharacter != ' ' && lastCharacter == null)
+
+            if(currentCharacter != null && lastCharacter == null)
                 currentLexeme += currentCharacter;
-            position++;
-            currentCharacter = reader.code.charAt(position);
+            reader.position++;
+            currentCharacter = reader.code.charAt(reader.position);
         }
-        //Final State
 
         return createLexicalRegister(currentLexeme, constType, constSize);
     }
@@ -503,16 +550,16 @@ class LexicalRegister {
 class Reader {
     String code = "";
     int numOfLines = 1;
+    int position = 0;
 
     public void readInputCode(){
         Scanner scanner = new Scanner(System.in);
         String currentLine = "";
 
         while(scanner.hasNextLine()&&(currentLine = scanner.nextLine()) != null) {
-            code+=currentLine + '\n';
+            code +=currentLine + '\n';
             numOfLines++;
         }
-        code +="\0";
         scanner.close();
     }
 }
