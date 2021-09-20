@@ -1,7 +1,7 @@
 /* Exemplo de Programa na linguagem L */
 
-int n<-1;
-string nome;
+int n<-0;
+string nome
 const MAXITER=10;
 
 write("Digite seu nome: ");

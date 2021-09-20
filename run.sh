@@ -1,0 +1,1 @@
+javac Compiler.java && java Compiler < teste.l

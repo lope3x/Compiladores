@@ -1,0 +1,49 @@
+Onde chamar o Declaração e Comando tem q colocar o ; depois
+
+
+S -> {(Declaração; | Bloco_ou_Comando) }
+Bloco_ou_Comando -> Comando | Bloco
+Bloco -> "{"{Comando}"}"
+Comando -> id Comando_Fat ; | Repetição | Teste | ; | readln"("id")" ; | write Escrita ; | writeln Escrita ;
+Comando_Fat ->  <- Expressão | "["Expressão"]" <- Expressão
+Repetição -> while Expressão Bloco_ou_Comando
+Teste -> if Expressão (Bloco_ou_Comando) [else (Bloco_ou_Comando)]
+Declaração -> Tipo Declaração_Init {,Declaração_Init} | const id = const_value
+Declaração_Init -> id [<- const_value]
+Escrita -> "("Expressão {, Expressão} ")"
+Expressão -> Expressão1 { Operadores_Relacional Expressão1}
+Expressão1 -> Expressão2 {(- | + | || ) Expressão2}
+Expressão2 -> Expressão3 {(* | && | / | div | mod) Expressão3}
+Expressão3 -> [!] Expressão4
+Expressão4 -> ( (int | float) "("Expressão")"  | Expressão5)
+Expressão5 -> "(" Expressão ")" | Expressão6
+Expressão6 -> const_value | id ["[" Expressão "]"]
+Operadores_Relacional -> = | != | < | > | <= | >=
+Tipo -> int | float | string | char
+
+
+First
+S: int , float , string , char , const , id, ;, readln, write, writeln, while, if, {
+Bloco_ou_Comando: id, ;, readln, write, writeln, while, if, {
+Bloco: {
+Comando: id, ;, readln, write, writeln, while, if
+Comando_Fat: <- | [
+Repetição: while
+Teste: if
+Declaração: int | float | string | char | const
+Declaração_Init: id
+Escrita: (
+Operadores_Relacional: = | != | < | > | <= | >=
+Expressão6: const_value, id 
+Expressão5: (, const_value, id 
+Expressão4: int, float, (, const_value, id 
+Expressão3: !, int, float, (, const_value, id 
+Expressão2: !, int, float, (, const_value, id 
+Expressão1: !, int, float, (, const_value, id
+Expressão: !, int, float, (, const_value, id
+
+
+
+
+PERGUNTA ISSO AMANHÃ
+int a <- 5, b <- 6, c <- 7

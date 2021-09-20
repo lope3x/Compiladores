@@ -39,7 +39,8 @@ enum Token {
     LEFT_SQUARE_BRACKET("["),//[
     RIGHT_SQUARE_BRACKET("]"),//]
     CONST("const"),
-    ID("");
+    CONST_VALUE(null),
+    ID(null);
 
     public final String name;
 
@@ -111,7 +112,7 @@ class SymbolTable {
         Token[] tokensArray = Token.values();
 
         for(Token token : tokensArray) {
-            if(token != Token.ID) {
+            if(token != Token.ID && token != Token.CONST_VALUE) {
                 Symbol symbolToBeAdded = new Symbol(token, token.name);
                 insert(symbolToBeAdded);
             }
@@ -272,6 +273,10 @@ class LexicalAnalyzer {
                 currentLine++;
             }
 
+            if(currentCharacter == '\0' && currentState != 0) {
+                throw new CompilerError("fim de arquivo nao esperado.", currentLine);
+            }
+
             switch (currentState) {
                 case 0:
                     if(currentCharacter == ' ' || currentCharacter == '\n' || currentCharacter == '\r') {
@@ -340,9 +345,6 @@ class LexicalAnalyzer {
                 case 2:
                     if(currentCharacter == '*') {
                         currentState = 3;
-                    }
-                    else if(currentCharacter == '\0'){
-                        throw new CompilerError("fim de Arquivo nao esperado.", currentLine);
                     }
                     currentCharacter = null;
                     break;
@@ -511,7 +513,7 @@ class LexicalAnalyzer {
             }
         }
         else {
-            symbol = new Symbol(Token.CONST, currentLexeme);
+            symbol = new Symbol(Token.CONST_VALUE, currentLexeme);
         }
         return new LexicalRegister(result, symbol, constType, constSize);
     }
