@@ -112,7 +112,7 @@ class SymbolTable {
         Token[] tokensArray = Token.values();
 
         for(Token token : tokensArray) {
-            if(token != Token.ID && token != Token.CONST_VALUE) {
+            if(token.name != null) {
                 Symbol symbolToBeAdded = new Symbol(token, token.name);
                 insert(symbolToBeAdded);
             }
@@ -207,10 +207,335 @@ class Symbol {
 
 class SyntaxAnalyzer {
     LexicalAnalyzer lexicalAnalyzer;
+    LexicalRegister currentRegister;
 
     public SyntaxAnalyzer(LexicalAnalyzer lexicalAnalyzer) throws CompilerError {
         this.lexicalAnalyzer = lexicalAnalyzer;
+//        testLexicalAnalyzer();
+    }
 
+    public void startSyntaxAnalyzer() throws CompilerError {
+        currentRegister = lexicalAnalyzer.getNextToken();
+        start();
+        System.out.println(lexicalAnalyzer.currentLine + " linhas compiladas");
+    }
+
+    private void start() throws CompilerError {
+        if(currentRegister == null){
+            return;
+        }
+        boolean isOnDeclaration = isOnDeclarationFirst();
+        boolean isOnBlockOrCommand = isOnBlockOrCommandFirst();
+        while(isOnDeclaration || isOnBlockOrCommand){
+
+            if(isOnDeclaration) {
+                declaration();
+                matchToken(Token.SEMICOLON);
+            }
+            else {
+                blockOrCommand();
+            }
+
+            if(currentRegister == null){
+                return;
+            }
+
+            isOnDeclaration = isOnDeclarationFirst();
+            isOnBlockOrCommand = isOnBlockOrCommandFirst();
+        }
+    }
+
+    private void declaration() throws CompilerError {
+        if(isOnTypeFirst()){
+            type();
+            declarationInit();
+            while(currentRegister.symbol.tokenType == Token.COMMA) {
+                matchToken(Token.COMMA);
+                declarationInit();
+            }
+        }
+        else {
+            matchToken(Token.CONST);
+            matchToken(Token.ID);
+            matchToken(Token.EQUAL);
+            matchToken(Token.CONST_VALUE);
+        }
+
+    }
+
+    private void declarationInit() throws CompilerError {
+        matchToken(Token.ID);
+        if(currentRegister.symbol.tokenType == Token.ATTRIBUTION){
+            matchToken(Token.ATTRIBUTION);
+            matchToken(Token.CONST_VALUE);
+        }
+    }
+
+    private void type() throws CompilerError {
+        Token currentToken = currentRegister.symbol.tokenType;
+        if(currentToken == Token.INT){
+            matchToken(Token.INT);
+        }
+        else if(currentToken == Token.FLOAT){
+            matchToken(Token.FLOAT);
+        }
+        else if(currentToken == Token.STRING){
+            matchToken(Token.STRING);
+        }
+        else {
+            matchToken(Token.CHAR);
+        }
+    }
+
+    private void blockOrCommand() throws CompilerError {
+        if(isOnCommandFirst()) {
+            command();
+        }
+        else {
+            block();
+        }
+    }
+
+    private void block() throws CompilerError {
+        matchToken(Token.LEFT_BRACE);
+        while(isOnCommandFirst()){
+            command();
+        }
+        matchToken(Token.RIGHT_BRACE);
+    }
+
+    private void command() throws CompilerError {
+        Token currentToken = currentRegister.symbol.tokenType;
+        if(currentToken == Token.ID){
+            matchToken(Token.ID);
+            commandFat();
+            matchToken(Token.SEMICOLON);
+        }
+        else if(currentToken == Token.WHILE){
+            repetition();
+        }
+        else if(currentToken == Token.IF){
+            test();
+        }
+        else if(currentToken == Token.SEMICOLON){
+            matchToken(Token.SEMICOLON);
+        }
+        else if(currentToken == Token.READ_LINE){
+            matchToken(Token.READ_LINE);
+            matchToken(Token.OPEN_PARENTESIS);
+            matchToken(Token.ID);
+            matchToken(Token.CLOSE_PARENTESIS);
+            matchToken(Token.SEMICOLON);
+        }
+        else if(currentToken == Token.WRITE){
+            matchToken(Token.WRITE);
+            write();
+            matchToken(Token.SEMICOLON);
+        }
+        else {
+            matchToken(Token.WRITE_LINE);
+            write();
+            matchToken(Token.SEMICOLON);
+        }
+    }
+
+    private void expression() throws CompilerError {
+        expression1();
+        while (isOnRelationalOperatorsFirst()){
+            relationalOperator();
+            expression1();
+        }
+    }
+
+    private void expression1() throws CompilerError {
+        expression2();
+        Token currentToken = currentRegister.symbol.tokenType;
+        while(currentToken == Token.MINUS || currentToken == Token.PLUS || currentToken == Token.OR){
+            if(currentToken == Token.MINUS){
+                matchToken(Token.MINUS);
+            }
+            else if(currentToken == Token.PLUS){
+                matchToken(Token.PLUS);
+            }
+            else {
+                matchToken(Token.OR);
+            }
+            expression2();
+            currentToken = currentRegister.symbol.tokenType;
+        }
+    }
+
+    private void expression2() throws CompilerError {
+        expression3();
+        Token currentToken = currentRegister.symbol.tokenType;
+        while(currentToken == Token.MULTIPLICATION || currentToken == Token.AND
+                || currentToken == Token.DIVISION || currentToken == Token.DIV
+                || currentToken == Token.MOD ){
+            if(currentToken == Token.MULTIPLICATION){
+                matchToken(Token.MULTIPLICATION);
+            }
+            else if(currentToken == Token.AND){
+                matchToken(Token.AND);
+            }
+            else if(currentToken == Token.DIVISION){
+                matchToken(Token.DIVISION);
+            }
+            else if(currentToken == Token.DIV){
+                matchToken(Token.DIV);
+            }
+            else {
+                matchToken(Token.MOD);
+            }
+            expression3();
+            currentToken = currentRegister.symbol.tokenType;
+        }
+    }
+
+    private void expression3() throws CompilerError {
+        if(currentRegister.symbol.tokenType == Token.NEGATION){
+            matchToken(Token.NEGATION);
+        }
+        expression4();
+    }
+
+    private void expression4() throws CompilerError {
+        Token currentToken = currentRegister.symbol.tokenType;
+        if(currentToken == Token.INT || currentToken == Token.FLOAT){
+            if(currentToken == Token.INT){
+                matchToken(Token.INT);
+            }
+            else {
+                matchToken(Token.FLOAT);
+            }
+
+            matchToken(Token.OPEN_PARENTESIS);
+            expression();
+            matchToken(Token.CLOSE_PARENTESIS);
+        }
+        else {
+            expression5();
+        }
+    }
+
+    private void expression5() throws CompilerError {
+        if(currentRegister.symbol.tokenType == Token.OPEN_PARENTESIS){
+            matchToken(Token.OPEN_PARENTESIS);
+            expression();
+            matchToken(Token.CLOSE_PARENTESIS);
+        }
+        else {
+            expression6();
+        }
+    }
+
+    private void expression6() throws CompilerError {
+        if(currentRegister.symbol.tokenType == Token.CONST_VALUE) {
+            matchToken(Token.CONST_VALUE);
+        }
+        else {
+            matchToken(Token.ID);
+
+            if(currentRegister.symbol.tokenType == Token.LEFT_SQUARE_BRACKET){
+                matchToken(Token.LEFT_SQUARE_BRACKET);
+                expression();
+                matchToken(Token.RIGHT_SQUARE_BRACKET);
+            }
+        }
+    }
+
+    private void repetition() throws CompilerError {
+        matchToken(Token.WHILE);
+        expression();
+        blockOrCommand();
+    }
+
+    private void test() throws CompilerError {
+        matchToken(Token.IF);
+        expression();
+        blockOrCommand();
+        if(currentRegister.symbol.tokenType == Token.ELSE) {
+            blockOrCommand();
+        }
+    }
+
+    private void commandFat() throws CompilerError {
+        if(currentRegister.symbol.tokenType == Token.ATTRIBUTION){
+            matchToken(Token.ATTRIBUTION);
+            expression();
+        }
+        else {
+            matchToken(Token.LEFT_SQUARE_BRACKET);
+            expression();
+            matchToken(Token.RIGHT_SQUARE_BRACKET);
+            matchToken(Token.ATTRIBUTION);
+            expression();
+        }
+    }
+
+    private void write() throws CompilerError {
+        matchToken(Token.OPEN_PARENTESIS);
+        expression();
+        while(currentRegister.symbol.tokenType == Token.COMMA) {
+            matchToken(Token.COMMA);
+            expression();
+        }
+        matchToken(Token.CLOSE_PARENTESIS);
+    }
+
+    private void relationalOperator() throws CompilerError {
+        Token currentToken = currentRegister.symbol.tokenType;
+        if(currentToken == Token.EQUAL){
+            matchToken(Token.EQUAL);
+        }
+        else if(currentToken == Token.NOT_EQUAL){
+            matchToken(Token.NOT_EQUAL);
+        }
+        else if(currentToken == Token.LESSER){
+            matchToken(Token.LESSER);
+        }
+        else if(currentToken == Token.GREATER){
+            matchToken(Token.GREATER);
+        }
+        else if(currentToken == Token.LESSER_OR_EQUAL_THAN) {
+            matchToken(Token.LESSER_OR_EQUAL_THAN);
+        }
+        else {
+            matchToken(Token.GREATER_OR_EQUAL_THAN);
+        }
+    }
+
+    private boolean isOnRelationalOperatorsFirst() {
+        Token currentToken = currentRegister.symbol.tokenType;
+
+        return currentToken == Token.EQUAL || currentToken == Token.NOT_EQUAL || currentToken == Token.LESSER
+                || currentToken == Token.GREATER || currentToken == Token.LESSER_OR_EQUAL_THAN ||
+                currentToken == Token.GREATER_OR_EQUAL_THAN;
+    }
+
+    private boolean isOnTypeFirst() {
+        Token currentToken = currentRegister.symbol.tokenType;
+        return currentToken == Token.INT || currentToken == Token.FLOAT || currentToken == Token.STRING ||
+                currentToken == Token.CHAR;
+    }
+
+    private boolean isOnCommandFirst() {
+        Token currentToken = currentRegister.symbol.tokenType;
+        return currentToken == Token.ID || currentToken == Token.SEMICOLON || currentToken == Token.READ_LINE
+                || currentToken == Token.WRITE || currentToken == Token.WRITE_LINE || currentToken == Token.WHILE
+                || currentToken == Token.IF;
+    }
+
+    private boolean isOnBlockOrCommandFirst() {
+        Token currentToken = currentRegister.symbol.tokenType;
+        return isOnCommandFirst() || currentToken == Token.LEFT_BRACE;
+    }
+
+    private boolean isOnDeclarationFirst() {
+        Token currentToken = currentRegister.symbol.tokenType;
+        return isOnTypeFirst()|| currentToken == Token.CONST;
+    }
+
+    private void testLexicalAnalyzer() throws CompilerError {
         Reader reader = lexicalAnalyzer.reader;
         while(reader.position < reader.code.length()){
             LexicalRegister register = lexicalAnalyzer.getNextToken();
@@ -218,6 +543,16 @@ class SyntaxAnalyzer {
                 register.print();
         }
         System.out.println(lexicalAnalyzer.currentLine + " linhas compiladas");
+    }
+
+    private void matchToken(Token expectedToken) throws CompilerError {
+        if(currentRegister.symbol.tokenType == expectedToken){
+            currentRegister = lexicalAnalyzer.getNextToken();
+        }
+        else {
+            throw new CompilerError("token nao esperado ["+currentRegister.symbol.lexeme+"].", lexicalAnalyzer.currentLine);
+        }
+
     }
 }
 
@@ -585,6 +920,7 @@ public class Compiler {
     public static void main(String[] args) {
         try{
             SyntaxAnalyzer syntaxAnalyzer = configureSyntaxAnalyzer();
+            syntaxAnalyzer.startSyntaxAnalyzer();
         }
         catch (CompilerError compilerError){
             compilerError.print();
