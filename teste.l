@@ -1,8 +1,8 @@
 /* Exemplo de Programa na linguagem L */
 
 int n<-0;
-string nome
-const MAXITER=10;
+string nome;
+const MAXITER=10.555555555555555;
 
 write("Digite seu nome: ");
 readln(nome);

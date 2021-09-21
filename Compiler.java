@@ -94,10 +94,15 @@ class CompilerError extends Throwable {
 class SymbolTable {
     private static SymbolTable instance;
     final int size = 1000;
-    ArrayList<Symbol>[] table;
+    ArrayList<ArrayList<Symbol>> table;
 
     private SymbolTable() {
-        table = new ArrayList[size];
+        table = new ArrayList<ArrayList<Symbol>>(size);
+
+        for(int i = 0; i<size;i++){
+            table.add(null);
+        }
+
         startTable();
     }
 
@@ -122,12 +127,12 @@ class SymbolTable {
     public SymbolTableSearchResult insert(Symbol symbol) {
         int positionInHash= hash(symbol.lexeme);
 
-        if (table[positionInHash] == null) {
-            table[positionInHash] = new ArrayList<>();
+        if (table.get(positionInHash) == null) {
+            table.set(positionInHash, new ArrayList<>());
         }
 
-        int addedIndex = table[positionInHash].size();
-        table[positionInHash].add(symbol);
+        int addedIndex = table.get(positionInHash).size();
+        table.get(positionInHash).add(symbol);
 
         return new SymbolTableSearchResult(positionInHash, addedIndex, symbol);
     }
@@ -142,7 +147,7 @@ class SymbolTable {
 
     public SymbolTableSearchResult search(String lexeme) {
         int positionInHash = hash(lexeme);
-        ArrayList<Symbol> lexemeList = table[positionInHash];
+        ArrayList<Symbol> lexemeList = table.get(positionInHash);
         if(lexemeList != null) {
             for(int i=0;i<lexemeList.size(); i++) {
                 Symbol symbol = lexemeList.get(i);
@@ -217,7 +222,7 @@ class SyntaxAnalyzer {
     public void startSyntaxAnalyzer() throws CompilerError {
         currentRegister = lexicalAnalyzer.getNextToken();
         start();
-        System.out.println(lexicalAnalyzer.currentLine + " linhas compiladas");
+        System.out.println(lexicalAnalyzer.currentLine + " linhas compiladas.");
     }
 
     private void start() throws CompilerError {
@@ -542,10 +547,13 @@ class SyntaxAnalyzer {
             if(register!=null)
                 register.print();
         }
-        System.out.println(lexicalAnalyzer.currentLine + " linhas compiladas");
+        System.out.println(lexicalAnalyzer.currentLine + " linhas compiladas.");
     }
 
     private void matchToken(Token expectedToken) throws CompilerError {
+        if(currentRegister == null) {
+            throw new CompilerError("fim de arquivo nao esperado.", lexicalAnalyzer.currentLine);
+        }
         if(currentRegister.symbol.tokenType == expectedToken){
             currentRegister = lexicalAnalyzer.getNextToken();
         }
@@ -663,7 +671,7 @@ class LexicalAnalyzer {
                         currentCharacter = null;
                     }
                     else {
-                        throw new CompilerError("lexema nao identificado [" + currentLexeme+currentCharacter + "]", currentLine);
+                        throw new CompilerError("lexema nao identificado [" + currentLexeme+currentCharacter + "].", currentLine);
                     }
                     break;
                 case 1:
@@ -828,8 +836,10 @@ class LexicalAnalyzer {
                 currentCharacter = reader.code.charAt(reader.position);
         }
 
-        if(currentLexeme.isEmpty())
+        if(currentLexeme.isEmpty()){
             return null;
+        }
+
 
         return createLexicalRegister(currentLexeme, constType, constSize);
     }
