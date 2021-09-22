@@ -68,6 +68,7 @@ enum ConstType {
  * */
 class Constants {
     public static int DecimalPrecision = 6;
+    public static int idMaxLength = 32;
     public static int IntBytesSize = 4;
     public static int CharBytesSize = 1;
     public static int FloatBytesSize = 4;
@@ -316,7 +317,7 @@ class SyntaxAnalyzer {
             matchToken(Token.ID);
             if (currentRegister.symbol.tokenType != Token.ATTRIBUTION) {
                 matchToken(Token.LEFT_SQUARE_BRACKET);
-                expression1();
+                expression();
                 matchToken(Token.RIGHT_SQUARE_BRACKET);
             }
             matchToken(Token.ATTRIBUTION);
@@ -339,13 +340,13 @@ class SyntaxAnalyzer {
             matchToken(Token.CLOSE_PARENTESIS);
             matchToken(Token.SEMICOLON);
         }
-        else if(currentToken == Token.WRITE){
-            matchToken(Token.WRITE);
-            write();
-            matchToken(Token.SEMICOLON);
-        }
         else {
-            matchToken(Token.WRITE_LINE);
+            if(currentToken == Token.WRITE){
+                matchToken(Token.WRITE);
+            }
+            else {
+                matchToken(Token.WRITE_LINE);
+            }
             write();
             matchToken(Token.SEMICOLON);
         }
@@ -360,6 +361,9 @@ class SyntaxAnalyzer {
     }
 
     private void expression1() throws CompilerError {
+        if(currentRegister.symbol.tokenType == Token.MINUS){
+            matchToken(Token.MINUS);
+        }
         expression2();
         Token currentToken = currentRegister.symbol.tokenType;
         while(currentToken == Token.MINUS || currentToken == Token.PLUS || currentToken == Token.OR){
@@ -441,10 +445,6 @@ class SyntaxAnalyzer {
     }
 
     private void expression6() throws CompilerError {
-        if(currentRegister.symbol.tokenType == Token.MINUS){
-            matchToken(Token.MINUS);
-        }
-
         if(currentRegister.symbol.tokenType == Token.CONST_VALUE) {
             matchToken(Token.CONST_VALUE);
         }
@@ -470,6 +470,7 @@ class SyntaxAnalyzer {
         expression();
         blockOrCommand();
         if(currentRegister.symbol.tokenType == Token.ELSE) {
+            matchToken(Token.ELSE);
             blockOrCommand();
         }
     }
@@ -581,6 +582,7 @@ class LexicalAnalyzer {
     public LexicalRegister getNextToken() throws CompilerError {
         int currentState = 0;
         int numberOfDecimal = 0;
+        int idLength = 0;
         Character currentCharacter;
         String currentLexeme = "";
         ConstType constType = null;
@@ -623,6 +625,7 @@ class LexicalAnalyzer {
                     }
                     else if(currentCharacter == '0') {
                         currentState = 16;
+                        numberOfDecimal++;
                     }
                     else if(currentCharacter == '/') {
                         currentState = 1;
@@ -643,6 +646,7 @@ class LexicalAnalyzer {
                     }
                     else if(currentCharacter >= '1' && currentCharacter <= '9'){
                         currentState = 10;
+                        numberOfDecimal ++;
                     }
                     else if(currentCharacter == '|') {
                         currentState = 5;
@@ -658,9 +662,13 @@ class LexicalAnalyzer {
                     }
                     else if(isCharLetter(currentCharacter) || currentCharacter == '_' ){
                         currentState = 19;
+                        idLength++;
+                    }
+                    else if(currentCharacter == '.'){
+                        currentState = 12;
                     }
                     else {
-                        throw new CompilerError("lexema nao identificado [" + currentLexeme+currentCharacter + "].", currentLine);
+                        throw new CompilerError("lexema nao identificado [" + currentLexeme + currentCharacter + "].", currentLine);
                     }
                     break;
                 case 1:
@@ -683,6 +691,10 @@ class LexicalAnalyzer {
                 case 3:
                     if(currentCharacter == '/') {
                         currentState = 0;
+                        currentCharacter = null;
+                    }
+                    else if(currentCharacter == '*') {
+                        currentState=3;
                         currentCharacter = null;
                     }
                     else {
@@ -717,15 +729,17 @@ class LexicalAnalyzer {
                     if(currentCharacter == '&') {
                         currentState = 4;
                     } else {
-                        throw new CompilerError("lexema nao identificado [" + currentLexeme + "]", currentLine);
+                        String current = "" + (currentCharByte == 10 ? "": currentCharacter);
+                        throw new CompilerError("lexema nao identificado [" + currentLexeme + current + "]", currentLine);
                     }
                     break;
                 case 10:
                     if(isCharDigit(currentCharacter)) {
                         currentState = 10;
+                        numberOfDecimal ++;
                     }
                     else if(currentCharacter =='.') {
-                        currentState = 11;
+                        currentState = 12;
                     }
                     else {
                         lastCharacterByte = currentCharByte;
@@ -735,10 +749,7 @@ class LexicalAnalyzer {
                     }
                     break;
                 case 11:
-                    if(numberOfDecimal > Constants.DecimalPrecision){
-                        throw new CompilerError("lexema nao identificado [" + currentLexeme + "]", currentLine);
-                    }
-                    else if(isCharDigit(currentCharacter)) {
+                    if(isCharDigit(currentCharacter)) {
                         currentState = 11;
                         numberOfDecimal++;
                     }
@@ -748,6 +759,20 @@ class LexicalAnalyzer {
                         constSize = Constants.FloatBytesSize;
                         currentState = 4;
                     }
+                    if(numberOfDecimal > Constants.DecimalPrecision){
+                        String current = "" + (currentCharByte == 10 ? "": currentCharacter);
+                        throw new CompilerError("lexema nao identificado [" + currentLexeme + current + "]", currentLine);
+                    }
+                    break;
+                case 12:
+                    if(isCharDigit(currentCharacter)) {
+                        currentState = 11;
+                        numberOfDecimal++;
+                    }
+                    else {
+                        String current = "" + (currentCharByte == 10 ? "": currentCharacter);
+                        throw new CompilerError("lexema nao identificado [" + currentLexeme + current + "]", currentLine);
+                    }
                     break;
                 case 13:
                     currentState = 14;
@@ -755,8 +780,11 @@ class LexicalAnalyzer {
                 case 14:
                     if(currentCharacter == '\'') {
                         currentState = 4;
+                        constType = ConstType.CHAR;
+                        constSize = Constants.CharBytesSize;
                     } else {
-                        throw new CompilerError("lexema nao identificado [" + currentLexeme + "]", currentLine);
+                        String current = "" + (currentCharByte == 10 ? "": currentCharacter);
+                        throw new CompilerError("lexema nao identificado [" + currentLexeme + current + "]", currentLine);
                     }
                     break;
                 case 15:
@@ -774,6 +802,10 @@ class LexicalAnalyzer {
                     }
                     else if(isCharDigit(currentCharacter)){
                         currentState = 10;
+                        numberOfDecimal++;
+                    }
+                    else if(currentCharacter == '.') {
+                        currentState = 12;
                     }
                     else {
                         currentState = 4;
@@ -787,7 +819,8 @@ class LexicalAnalyzer {
                         currentState = 18;
                     }
                     else {
-                        throw new CompilerError("lexema nao identificado [" + currentLexeme + "]", currentLine);
+                        String current = "" + (currentCharByte == 10 ? "": currentCharacter);
+                        throw new CompilerError("lexema nao identificado [" + currentLexeme + current + "]", currentLine);
                     }
                     break;
                 case 18:
@@ -797,13 +830,21 @@ class LexicalAnalyzer {
                         currentState = 4;
                     }
                     else {
-                        throw new CompilerError("lexema nao identificado [" + currentLexeme + "]", currentLine);
+                        String current = "" + (currentCharByte == 10 ? "": currentCharacter);
+                        throw new CompilerError("lexema nao identificado [" + currentLexeme + current + "]", currentLine);
                     }
                     break;
                 case 19:
-                    if(!isCharLetter(currentCharacter) && !isCharDigit(currentCharacter) && currentCharacter != '_' && currentCharacter != '.') {
+                    if (isCharLetter(currentCharacter) || isCharDigit(currentCharacter) || currentCharacter == '_' || currentCharacter == '.') {
+                        currentState = 19;
+                        idLength++;
+                    } else {
                         lastCharacterByte = currentCharByte;
                         currentState = 4;
+                    }
+                    if(idLength > Constants.idMaxLength){
+                        String current = "" + (currentCharByte == 10 ? "": currentCharacter);
+                        throw new CompilerError("lexema nao identificado [" + currentLexeme + current + "]", currentLine);
                     }
                     break;
                 default:
