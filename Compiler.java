@@ -1,7 +1,8 @@
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Scanner;
 
 enum Token {
     INT("int"),
@@ -39,6 +40,7 @@ enum Token {
     LEFT_SQUARE_BRACKET("["),//[
     RIGHT_SQUARE_BRACKET("]"),//]
     CONST("const"),
+    EOF(null),
     CONST_VALUE(null),
     ID(null);
 
@@ -216,7 +218,6 @@ class SyntaxAnalyzer {
 
     public SyntaxAnalyzer(LexicalAnalyzer lexicalAnalyzer) throws CompilerError {
         this.lexicalAnalyzer = lexicalAnalyzer;
-//        testLexicalAnalyzer();
     }
 
     public void startSyntaxAnalyzer() throws CompilerError {
@@ -226,9 +227,6 @@ class SyntaxAnalyzer {
     }
 
     private void start() throws CompilerError {
-        if(currentRegister == null){
-            return;
-        }
         boolean isOnDeclaration = isOnDeclarationFirst();
         boolean isOnBlockOrCommand = isOnBlockOrCommandFirst();
         while(isOnDeclaration || isOnBlockOrCommand){
@@ -240,14 +238,11 @@ class SyntaxAnalyzer {
             else {
                 blockOrCommand();
             }
-
-            if(currentRegister == null){
-                return;
-            }
-
             isOnDeclaration = isOnDeclarationFirst();
             isOnBlockOrCommand = isOnBlockOrCommandFirst();
         }
+
+        matchToken(Token.EOF);
     }
 
     private void declaration() throws CompilerError {
@@ -263,6 +258,9 @@ class SyntaxAnalyzer {
             matchToken(Token.CONST);
             matchToken(Token.ID);
             matchToken(Token.EQUAL);
+            if(currentRegister.symbol.tokenType == Token.MINUS){
+                matchToken(Token.MINUS);
+            }
             matchToken(Token.CONST_VALUE);
         }
 
@@ -272,6 +270,9 @@ class SyntaxAnalyzer {
         matchToken(Token.ID);
         if(currentRegister.symbol.tokenType == Token.ATTRIBUTION){
             matchToken(Token.ATTRIBUTION);
+            if(currentRegister.symbol.tokenType == Token.MINUS){
+                matchToken(Token.MINUS);
+            }
             matchToken(Token.CONST_VALUE);
         }
     }
@@ -313,7 +314,13 @@ class SyntaxAnalyzer {
         Token currentToken = currentRegister.symbol.tokenType;
         if(currentToken == Token.ID){
             matchToken(Token.ID);
-            commandFat();
+            if (currentRegister.symbol.tokenType != Token.ATTRIBUTION) {
+                matchToken(Token.LEFT_SQUARE_BRACKET);
+                expression1();
+                matchToken(Token.RIGHT_SQUARE_BRACKET);
+            }
+            matchToken(Token.ATTRIBUTION);
+            expression();
             matchToken(Token.SEMICOLON);
         }
         else if(currentToken == Token.WHILE){
@@ -397,7 +404,7 @@ class SyntaxAnalyzer {
     }
 
     private void expression3() throws CompilerError {
-        if(currentRegister.symbol.tokenType == Token.NEGATION){
+        while(currentRegister.symbol.tokenType == Token.NEGATION){
             matchToken(Token.NEGATION);
         }
         expression4();
@@ -434,6 +441,10 @@ class SyntaxAnalyzer {
     }
 
     private void expression6() throws CompilerError {
+        if(currentRegister.symbol.tokenType == Token.MINUS){
+            matchToken(Token.MINUS);
+        }
+
         if(currentRegister.symbol.tokenType == Token.CONST_VALUE) {
             matchToken(Token.CONST_VALUE);
         }
@@ -460,20 +471,6 @@ class SyntaxAnalyzer {
         blockOrCommand();
         if(currentRegister.symbol.tokenType == Token.ELSE) {
             blockOrCommand();
-        }
-    }
-
-    private void commandFat() throws CompilerError {
-        if(currentRegister.symbol.tokenType == Token.ATTRIBUTION){
-            matchToken(Token.ATTRIBUTION);
-            expression();
-        }
-        else {
-            matchToken(Token.LEFT_SQUARE_BRACKET);
-            expression();
-            matchToken(Token.RIGHT_SQUARE_BRACKET);
-            matchToken(Token.ATTRIBUTION);
-            expression();
         }
     }
 
@@ -540,22 +537,20 @@ class SyntaxAnalyzer {
         return isOnTypeFirst()|| currentToken == Token.CONST;
     }
 
-    private void testLexicalAnalyzer() throws CompilerError {
-        Reader reader = lexicalAnalyzer.reader;
-        while(reader.position < reader.code.length()){
-            LexicalRegister register = lexicalAnalyzer.getNextToken();
-            if(register!=null)
-                register.print();
-        }
+    public void testLexicalAnalyzer() throws CompilerError {
+        do {
+            currentRegister = lexicalAnalyzer.getNextToken();
+            currentRegister.print();
+        } while (currentRegister.symbol.tokenType != Token.EOF);
         System.out.println(lexicalAnalyzer.currentLine + " linhas compiladas.");
     }
 
     private void matchToken(Token expectedToken) throws CompilerError {
-        if(currentRegister == null) {
-            throw new CompilerError("fim de arquivo nao esperado.", lexicalAnalyzer.currentLine);
-        }
-        if(currentRegister.symbol.tokenType == expectedToken){
+        if(currentRegister.symbol.tokenType == expectedToken) {
             currentRegister = lexicalAnalyzer.getNextToken();
+        }
+        else if(currentRegister.symbol.tokenType == Token.EOF) {
+            throw new CompilerError("fim de arquivo nao esperado.", lexicalAnalyzer.currentLine);
         }
         else {
             throw new CompilerError("token nao esperado ["+currentRegister.symbol.lexeme+"].", lexicalAnalyzer.currentLine);
@@ -567,8 +562,8 @@ class SyntaxAnalyzer {
 class LexicalAnalyzer {
 
     int currentLine = 1;
-    final Reader reader;
-    private Character lastCharacter = null;
+    final CodeReader codeReader;
+    private Integer lastCharacterByte = null;
     private final SymbolTable symbolTable = SymbolTable.getInstance();
 
 
@@ -579,9 +574,8 @@ class LexicalAnalyzer {
             '[', ']', '{', '}', '+', '-', '*', '\"','\'','/', '|', '\\', '&', '%', '!', '?', '>', '<', '=', '\n', '\r', '\0' ));
 
 
-    public LexicalAnalyzer(Reader reader) {
-        this.reader = reader;
-        reader.readInputCode();
+    public LexicalAnalyzer(CodeReader codeReader) {
+        this.codeReader = codeReader;
     }
 
     public LexicalRegister getNextToken() throws CompilerError {
@@ -591,33 +585,34 @@ class LexicalAnalyzer {
         String currentLexeme = "";
         ConstType constType = null;
         Integer constSize = null;
+        Integer currentCharByte = null;
 
-        if(lastCharacter == null) {
-            currentCharacter = reader.code.charAt(reader.position);
-        }
-        else if (lastCharacter == '\n' || lastCharacter == '\r') {
-            currentCharacter = reader.code.charAt(reader.position);
-            lastCharacter = null;
+        if(lastCharacterByte == null) {
+            currentCharByte = codeReader.getNextChar();
         }
         else{
-            currentCharacter = lastCharacter;
-            lastCharacter = null;
-            reader.position--;
+            currentCharByte = lastCharacterByte;
+            lastCharacterByte = null;
         }
 
         int finalState = 4;
 
-        while(currentState != finalState && reader.position < reader.code.length()) {
+        while(currentState != finalState) {
+            if(currentCharByte == -1) {
+                if(currentState == 0)
+                    return createEOF();
+                else
+                    throw new CompilerError("fim de arquivo nao esperado.", currentLine);
+            }
+
+            currentCharacter = (char) currentCharByte.intValue();
+
+            if(currentCharByte == 13) {
+                currentCharByte = codeReader.getNextChar();
+            }
+
             if(!verifyIsValidCharacter(currentCharacter)){
                 throw new CompilerError("caractere invalido.", currentLine);
-            }
-
-            if(currentCharacter == '\n' || currentCharacter == '\r'){
-                currentLine++;
-            }
-
-            if(currentCharacter == '\0' && currentState != 0) {
-                throw new CompilerError("fim de arquivo nao esperado.", currentLine);
             }
 
             switch (currentState) {
@@ -643,7 +638,7 @@ class LexicalAnalyzer {
                     }
                     else if(currentCharacter == '*' || currentCharacter == '+' || currentCharacter == '=' || currentCharacter == ','
                             || currentCharacter == ';' || currentCharacter == '(' || currentCharacter == ')' || currentCharacter == '{' ||
-                            currentCharacter == '}' || currentCharacter == '[' || currentCharacter == ']'){
+                            currentCharacter == '}' || currentCharacter == '[' || currentCharacter == ']' || currentCharacter == '-'){
                         currentState = 4;
                     }
                     else if(currentCharacter >= '1' && currentCharacter <= '9'){
@@ -651,9 +646,6 @@ class LexicalAnalyzer {
                     }
                     else if(currentCharacter == '|') {
                         currentState = 5;
-                    }
-                    else if(currentCharacter == '-'){
-                        currentState = 12;
                     }
                     else if(currentCharacter == '!'){
                         currentState = 6;
@@ -667,9 +659,6 @@ class LexicalAnalyzer {
                     else if(isCharLetter(currentCharacter) || currentCharacter == '_' ){
                         currentState = 19;
                     }
-                    else if(currentCharacter == '\0'){
-                        currentCharacter = null;
-                    }
                     else {
                         throw new CompilerError("lexema nao identificado [" + currentLexeme+currentCharacter + "].", currentLine);
                     }
@@ -681,7 +670,7 @@ class LexicalAnalyzer {
                         currentLexeme = "";
                     }
                     else {
-                        lastCharacter = currentCharacter;
+                        lastCharacterByte = currentCharByte;
                         currentState = 4;
                     }
                     break;
@@ -709,18 +698,18 @@ class LexicalAnalyzer {
                 case 6:
                     currentState = 4;
                     if (currentCharacter != '=') {
-                        lastCharacter = currentCharacter;
+                        lastCharacterByte = currentCharByte;
                     }
                     break;
                 case 7:
                     currentState  = 4;
                     if (currentCharacter != '-' && currentCharacter != '=') {
-                        lastCharacter = currentCharacter;
+                        lastCharacterByte = currentCharByte;
                     }
                     break;
                 case 8:
                     if(currentCharacter != '=') {
-                        lastCharacter = currentCharacter;
+                        lastCharacterByte = currentCharByte;
                     }
                     currentState = 4;
                     break;
@@ -739,7 +728,7 @@ class LexicalAnalyzer {
                         currentState = 11;
                     }
                     else {
-                        lastCharacter = currentCharacter;
+                        lastCharacterByte = currentCharByte;
                         constType = ConstType.INT;
                         constSize = Constants.IntBytesSize;
                         currentState = 4;
@@ -754,18 +743,9 @@ class LexicalAnalyzer {
                         numberOfDecimal++;
                     }
                     else {
-                        lastCharacter = currentCharacter;
+                        lastCharacterByte = currentCharByte;
                         constType = ConstType.FLOAT;
                         constSize = Constants.FloatBytesSize;
-                        currentState = 4;
-                    }
-                    break;
-                case 12:
-                    if(isCharDigit(currentCharacter)) {
-                        currentState = 10;
-                    }
-                    else {
-                        lastCharacter = currentCharacter;
                         currentState = 4;
                     }
                     break;
@@ -784,7 +764,7 @@ class LexicalAnalyzer {
                         currentState = 4;
                         constType = ConstType.STRING;
                         constSize = currentLexeme.length()-1;
-                    } else if(currentCharacter == '\n' || currentCharacter == '\r' || currentCharacter == '$') {
+                    } else if(currentCharacter == '\n' || currentCharacter == '\r') {
                         throw new CompilerError("lexema nao identificado [" + currentLexeme + "]", currentLine);
                     }
                     break;
@@ -797,7 +777,7 @@ class LexicalAnalyzer {
                     }
                     else {
                         currentState = 4;
-                        lastCharacter = currentCharacter;
+                        lastCharacterByte = currentCharByte;
                         constType = ConstType.INT;
                         constSize = Constants.IntBytesSize;
                     }
@@ -822,26 +802,30 @@ class LexicalAnalyzer {
                     break;
                 case 19:
                     if(!isCharLetter(currentCharacter) && !isCharDigit(currentCharacter) && currentCharacter != '_' && currentCharacter != '.') {
-                        lastCharacter = currentCharacter;
+                        lastCharacterByte = currentCharByte;
                         currentState = 4;
                     }
                     break;
                 default:
             }
 
-            if(currentCharacter != null && lastCharacter == null)
+            if(currentCharByte == 10 && lastCharacterByte == null){
+                currentLine++;
+            }
+
+            if(currentCharacter != null && lastCharacterByte == null)
                 currentLexeme += currentCharacter;
-            reader.position++;
-            if(reader.position < reader.code.length())
-                currentCharacter = reader.code.charAt(reader.position);
-        }
 
-        if(currentLexeme.isEmpty()){
-            return null;
+            if(currentState !=4)
+                currentCharByte = codeReader.getNextChar();
         }
-
 
         return createLexicalRegister(currentLexeme, constType, constSize);
+    }
+
+    private LexicalRegister createEOF(){
+        Symbol symbol = new Symbol(Token.EOF, "eof");
+        return new LexicalRegister(null,symbol, null, null);
     }
 
     private LexicalRegister createLexicalRegister(String currentLexeme, ConstType constType, Integer constSize) {
@@ -908,21 +892,17 @@ class LexicalRegister {
     }
 }
 
-class Reader {
-    String code = "";
-    int numOfLines = 1;
-    int position = 0;
+class CodeReader {
+    InputStreamReader reader  = new InputStreamReader(System.in);
 
-    public void readInputCode(){
-        Scanner scanner = new Scanner(System.in);
-        String currentLine = "";
-
-        while(scanner.hasNextLine()&&(currentLine = scanner.nextLine()) != null) {
-            code +=currentLine + '\n';
-            numOfLines++;
+    public int getNextChar() {
+        try{
+            return reader.read();
         }
-        code+='\0';
-        scanner.close();
+        catch (IOException ioe){
+            ioe.printStackTrace();
+        }
+        return -1;
     }
 }
 
@@ -931,6 +911,7 @@ public class Compiler {
         try{
             SyntaxAnalyzer syntaxAnalyzer = configureSyntaxAnalyzer();
             syntaxAnalyzer.startSyntaxAnalyzer();
+//            syntaxAnalyzer.testLexicalAnalyzer();
         }
         catch (CompilerError compilerError){
             compilerError.print();
@@ -939,8 +920,8 @@ public class Compiler {
     }
 
     public static SyntaxAnalyzer configureSyntaxAnalyzer() throws CompilerError{
-        Reader reader = new Reader();
-        LexicalAnalyzer lexicalAnalyzer = new LexicalAnalyzer(reader);
+        CodeReader codeReader = new CodeReader();
+        LexicalAnalyzer lexicalAnalyzer = new LexicalAnalyzer(codeReader);
 
         return new SyntaxAnalyzer(lexicalAnalyzer);
     }

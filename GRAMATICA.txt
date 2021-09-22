@@ -1,30 +1,30 @@
-Onde chamar o Declaração e Comando tem q colocar o ; depois
-
-
-Start -> {(Declaração; | Bloco_ou_Comando)} OK
-Bloco_ou_Comando -> Comando | Bloco OK
-Bloco -> "{"{Comando}"}" OK
-Tipo -> int | float | string | char OK
-Declaração -> Tipo Declaração_Init {,Declaração_Init} | const id = const_value OK
-Declaração_Init -> id [<- const_value] OK
-Escrita -> "("Expressão {, Expressão} ")" OK
-Comando -> id Comando_Fat ; | Repetição | Teste | ; | readln"("id")" ; | write Escrita ; | writeln Escrita ; OK
-Comando_Fat ->  <- Expressão | "["Expressão"]" <- Expressão OK
-Repetição -> while Expressão Bloco_ou_Comando OK
-Teste -> if Expressão Bloco_ou_Comando [else Bloco_ou_Comando] OK
-Operadores_Relacional -> = | != | < | > | <= | >= OK
-Expressão -> Expressão1 { Operadores_Relacional Expressão1} OK
-Expressão1 -> Expressão2 {(- | + | || ) Expressão2} OK
-Expressão2 -> Expressão3 {(* | && | / | div | mod) Expressão3} OK
-Expressão3 -> [!] Expressão4 OK
-Expressão4 -> ( (int | float) "("Expressão")"  | Expressão5) OK
-Expressão5 -> "(" Expressão ")" | Expressão6 OK
+Start -> {Declaração; | Bloco_ou_Comando} EOF
+Bloco_ou_Comando -> Comando | Bloco
+Bloco -> "{"{Comando}"}"
+Tipo -> int | float | string | char
+Declaração -> Tipo Declaração_Init {,Declaração_Init} | const id = [-] const_value
+Declaração_Init -> id [<- [-] const_value]
+Escrita -> "("Expressão {, Expressão} ")"
+Comando -> id ["["Expressão1"]"] <- Expressão ; | Repetição | Teste | ; | readln"("id")" ; | write Escrita ; | writeln Escrita ;
+Repetição -> while Expressão Bloco_ou_Comando
+Teste -> if Expressão Bloco_ou_Comando [else Bloco_ou_Comando]
+Operadores_Relacional -> = | != | < | > | <= | >=
+Expressão -> Expressão1 { Operadores_Relacional Expressão1}
+Expressão1 -> Expressão2 {(- | + | || )  Expressão2}
+Expressão2 -> Expressão3 {(* | && | / | div | mod) Expressão3}
+Expressão3 -> {!} Expressão4
+Expressão4 -> ( (int | float) "("Expressão")"  | Expressão5)
+Expressão5 -> "(" Expressão ")" | Expressão6
+Expressão6 -> [-] (const_value | id ["[" Expressão "]"])
 
 
 
 
 
-Expressão6 -> const_value | id ["[" Expressão "]"]
+
+
+
+
 
 
 
@@ -36,7 +36,6 @@ Start: int , float , string , char , const , id, ;, readln, write, writeln, whil
 Bloco_ou_Comando: id, ;, readln, write, writeln, while, if, {
 Bloco: {
 Comando: id, ;, readln, write, writeln, while, if
-Comando_Fat: <- | [
 Repetição: while
 Teste: if
 Declaração: int | float | string | char | const
@@ -52,7 +51,3 @@ Expressão1: !, int, float, (, const_value, id
 Expressão: !, int, float, (, const_value, id
 
 
-
-
-PERGUNTA ISSO AMANHÃ
-int a <- 5, b <- 6, c <- 7

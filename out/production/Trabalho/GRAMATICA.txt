@@ -1,4 +1,3 @@
-Onde chamar o Declaração e Comando tem q colocar o ; depois
 
 
 Start -> {(Declaração; | Bloco_ou_Comando)} OK
@@ -9,7 +8,7 @@ Declaração -> Tipo Declaração_Init {,Declaração_Init} | const id = const_v
 Declaração_Init -> id [<- const_value] OK
 Escrita -> "("Expressão {, Expressão} ")" OK
 Comando -> id Comando_Fat ; | Repetição | Teste | ; | readln"("id")" ; | write Escrita ; | writeln Escrita ; OK
-Comando_Fat ->  <- Expressão | "["Expressão"]" <- Expressão OK
+Comando_Fat ->  <- Expressão | "["Expressão1"]" <- Expressão OK
 Repetição -> while Expressão Bloco_ou_Comando OK
 Teste -> if Expressão Bloco_ou_Comando [else Bloco_ou_Comando] OK
 Operadores_Relacional -> = | != | < | > | <= | >= OK
@@ -19,12 +18,7 @@ Expressão2 -> Expressão3 {(* | && | / | div | mod) Expressão3} OK
 Expressão3 -> [!] Expressão4 OK
 Expressão4 -> ( (int | float) "("Expressão")"  | Expressão5) OK
 Expressão5 -> "(" Expressão ")" | Expressão6 OK
-
-
-
-
-
-Expressão6 -> const_value | id ["[" Expressão "]"]
+Expressão6 -> const_value | id ["[" Expressão "]"] OK
 
 
 
@@ -52,7 +46,3 @@ Expressão1: !, int, float, (, const_value, id
 Expressão: !, int, float, (, const_value, id
 
 
-
-
-PERGUNTA ISSO AMANHÃ
-int a <- 5, b <- 6, c <- 7
