@@ -706,6 +706,9 @@ class LexicalAnalyzer {
                     if(currentCharacter == '|'){
                         currentState = 4;
                     }
+                    else {
+                        throw new CompilerError("lexema nao identificado [" + currentLexeme + "].", currentLine);
+                    }
                     break;
                 case 6:
                     currentState = 4;
