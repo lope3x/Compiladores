@@ -728,9 +728,8 @@ class LexicalAnalyzer {
                 case 9:
                     if(currentCharacter == '&') {
                         currentState = 4;
-                    } else {
-                        String current = "" + (currentCharByte == 10 ? "": currentCharacter);
-                        throw new CompilerError("lexema nao identificado [" + currentLexeme + current + "]", currentLine);
+                    } else {            
+                        throw new CompilerError("lexema nao identificado [" + currentLexeme + "].", currentLine);
                     }
                     break;
                 case 10:
@@ -759,9 +758,8 @@ class LexicalAnalyzer {
                         constSize = Constants.FloatBytesSize;
                         currentState = 4;
                     }
-                    if(numberOfDecimal > Constants.DecimalPrecision){
-                        String current = "" + (currentCharByte == 10 ? "": currentCharacter);
-                        throw new CompilerError("lexema nao identificado [" + currentLexeme + current + "]", currentLine);
+                    if(numberOfDecimal > Constants.DecimalPrecision){                      
+                        throw new CompilerError("lexema nao identificado [" + currentLexeme + "].", currentLine);
                     }
                     break;
                 case 12:
@@ -769,9 +767,8 @@ class LexicalAnalyzer {
                         currentState = 11;
                         numberOfDecimal++;
                     }
-                    else {
-                        String current = "" + (currentCharByte == 10 ? "": currentCharacter);
-                        throw new CompilerError("lexema nao identificado [" + currentLexeme + current + "]", currentLine);
+                    else {                 
+                        throw new CompilerError("lexema nao identificado [" + currentLexeme + "].", currentLine);
                     }
                     break;
                 case 13:
@@ -782,9 +779,8 @@ class LexicalAnalyzer {
                         currentState = 4;
                         constType = ConstType.CHAR;
                         constSize = Constants.CharBytesSize;
-                    } else {
-                        String current = "" + (currentCharByte == 10 ? "": currentCharacter);
-                        throw new CompilerError("lexema nao identificado [" + currentLexeme + current + "]", currentLine);
+                    } else {                     
+                        throw new CompilerError("lexema nao identificado [" + currentLexeme + "].", currentLine);
                     }
                     break;
                 case 15:
@@ -793,7 +789,7 @@ class LexicalAnalyzer {
                         constType = ConstType.STRING;
                         constSize = currentLexeme.length()-1;
                     } else if(currentCharacter == '\n' || currentCharacter == '\r') {
-                        throw new CompilerError("lexema nao identificado [" + currentLexeme + "]", currentLine);
+                        throw new CompilerError("lexema nao identificado [" + currentLexeme + "].", currentLine);
                     }
                     break;
                 case 16:
@@ -818,9 +814,8 @@ class LexicalAnalyzer {
                     if(isCharHexadecimal(currentCharacter)){
                         currentState = 18;
                     }
-                    else {
-                        String current = "" + (currentCharByte == 10 ? "": currentCharacter);
-                        throw new CompilerError("lexema nao identificado [" + currentLexeme + current + "]", currentLine);
+                    else {                      
+                        throw new CompilerError("lexema nao identificado [" + currentLexeme + "].", currentLine);
                     }
                     break;
                 case 18:
@@ -829,9 +824,8 @@ class LexicalAnalyzer {
                         constSize = Constants.HexBytesSize;
                         currentState = 4;
                     }
-                    else {
-                        String current = "" + (currentCharByte == 10 ? "": currentCharacter);
-                        throw new CompilerError("lexema nao identificado [" + currentLexeme + current + "]", currentLine);
+                    else {                      
+                        throw new CompilerError("lexema nao identificado [" + currentLexeme + "].", currentLine);
                     }
                     break;
                 case 19:
@@ -842,9 +836,8 @@ class LexicalAnalyzer {
                         lastCharacterByte = currentCharByte;
                         currentState = 4;
                     }
-                    if(idLength > Constants.idMaxLength){
-                        String current = "" + (currentCharByte == 10 ? "": currentCharacter);
-                        throw new CompilerError("lexema nao identificado [" + currentLexeme + current + "]", currentLine);
+                    if(idLength > Constants.idMaxLength){                      
+                        throw new CompilerError("lexema nao identificado [" + currentLexeme + "].", currentLine);
                     }
                     break;
                 default:
