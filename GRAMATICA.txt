@@ -22,8 +22,9 @@ Expressão6 -> const_value | id ["[" Expressão "]"]
 
 
 
+while 5< 3{
 
-
+}
 
 
 
