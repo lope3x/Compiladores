@@ -1094,12 +1094,22 @@ class LexicalAnalyzer {
     }
 }
 
+/**
+ * Classe que possui dados sobre o registro léxico encontrado/criado na tabela
+ */
 class LexicalRegister {
     SymbolTableSearchResult symbolInTable;
     Symbol symbol;
     ConstType constType;
     Integer size;
 
+    /**
+     * Inicializa objeto de registro léxico
+     * @param symbolInTable dados sobre o símbolo na tabela
+     * @param symbol objeto que representa o símbolo
+     * @param constType tipo da constante (caso seja uma)
+     * @param size tamanho da constante (caso seja uma)
+     */
     public LexicalRegister(SymbolTableSearchResult symbolInTable, Symbol symbol, ConstType constType, Integer size) {
         this.symbolInTable = symbolInTable;
         this.symbol = symbol;
