@@ -240,7 +240,7 @@ class Symbol {
     String lexeme;
 
     /**
-     * Construtor da classe
+     * Construtor da classe.
      */
     Symbol(Token token, String lexeme) {
         this.tokenType = token;
