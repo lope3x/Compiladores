@@ -707,6 +707,9 @@ class SyntaxAnalyzer {
     }
 }
 
+/**
+ * Classe em que implementamos o nosos analisador léxico.
+ */
 class LexicalAnalyzer {
 
     int currentLine = 1; //linha atual sendo lida
@@ -730,9 +733,9 @@ class LexicalAnalyzer {
     }
 
     /**
-     * Obtêm o próximo token do código
-     * @return LexicalRegister contendo dados sobre o token
-     * @throws CompilerError
+     * Obtêm o próximo token do código.
+     * @return LexicalRegister contendo dados sobre o token.
+     * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
      */
     public LexicalRegister getNextToken() throws CompilerError {
         int currentState = 0; //estado atual
@@ -1032,11 +1035,11 @@ class LexicalAnalyzer {
     }
 
     /**
-     * Cria ou procura um token na tabela a partir do lexema lido
-     * @param currentLexeme lexema lido
-     * @param constType tipo da constante
-     * @param constSize tamanho da constante
-     * @return LexicalRegister contendo informação sobre o token inserido/encontrado
+     * Cria ou procura um token na tabela a partir do lexema lido.
+     * @param currentLexeme lexema lido.
+     * @param constType tipo da constante.
+     * @param constSize tamanho da constante.
+     * @return LexicalRegister contendo informação sobre o token inserido/encontrado.
      */
     private LexicalRegister createLexicalRegister(String currentLexeme, ConstType constType, Integer constSize) {
         SymbolTableSearchResult result = null;
@@ -1058,27 +1061,27 @@ class LexicalAnalyzer {
     }
 
     /**
-     * Checa se caractere é válido para um hexadecimal
-     * @param c caractere a ser checado
-     * @return boolean - se caractere é válido (true) ou não (false)
+     * Checa se caractere é válido para um hexadecimal.
+     * @param c caractere a ser checado.
+     * @return boolean - se caractere é válido (true) ou não (false).
      */
     private boolean isCharHexadecimal(char c) {
        return isCharDigit(c) || c >= 'A' && c <= 'F';
     }
 
     /**
-     * Checa se caractere é um dígito
-     * @param c caractere a ser checado
-     * @return boolean - se caractere é dígito (true) ou não (false)
+     * Checa se caractere é um dígito.
+     * @param c caractere a ser checado.
+     * @return boolean - se caractere é dígito (true) ou não (false).
      */
     private boolean isCharDigit(char c) {
         return c>='0' && c<='9';
     }
 
     /**
-     * Checa se caractere é um letra
-     * @param c caractere a ser checado
-     * @return boolean - se caractere é letra (true) ou não (false)
+     * Checa se caractere é um letra.
+     * @param c caractere a ser checado.
+     * @return boolean - se caractere é letra (true) ou não (false).
      */
     private boolean isCharLetter(char c){
         return (c >= 'a' && c<='z') || (c>='A' && c<='Z');
