@@ -562,12 +562,15 @@ class SyntaxAnalyzer {
 
 class LexicalAnalyzer {
 
-    int currentLine = 1;
+    int currentLine = 1; //linha atual sendo lida
     final CodeReader codeReader;
     private Integer lastCharacterByte = null;
     private final SymbolTable symbolTable = SymbolTable.getInstance();
 
 
+    /**
+     * Lista de caracteres aceito na linguagem
+     */
     private static final HashSet<Character> acceptedCharacters = new HashSet<>(Arrays.asList('0', '1', '2', '3',
             '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
             'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z','a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
@@ -579,16 +582,22 @@ class LexicalAnalyzer {
         this.codeReader = codeReader;
     }
 
+    /**
+     * Obtêm o próximo token do código
+     * @return LexicalRegister contendo dados sobre o token
+     * @throws CompilerError
+     */
     public LexicalRegister getNextToken() throws CompilerError {
-        int currentState = 0;
-        int numberOfDecimal = 0;
-        int idLength = 0;
-        Character currentCharacter;
-        String currentLexeme = "";
-        ConstType constType = null;
-        Integer constSize = null;
+        int currentState = 0; //estado atual
+        int numberOfDecimal = 0; //quantidade de casas decimais
+        int idLength = 0; //quantidade de caracteres do identificador
+        Character currentCharacter; //caractere atual sendo lido
+        String currentLexeme = ""; //caracteres que compõem o lexema sendo lido
+        ConstType constType = null; //tipo da constante
+        Integer constSize = null; //tamanho da constante
         int currentCharByte;
 
+        //checa se lexema inicia com um caractere lido previamente
         if(lastCharacterByte == null) {
             currentCharByte = codeReader.getNextChar();
         }
@@ -598,8 +607,9 @@ class LexicalAnalyzer {
         }
 
         int finalState = 4;
-
+        //se estado não é final
         while(currentState != finalState) {
+            //se chegou no final do arquivo (não retornou um char na leitura)
             if(currentCharByte == -1) {
                 if(currentState == 0)
                     return createEOF();
@@ -613,10 +623,12 @@ class LexicalAnalyzer {
                 currentCharByte = codeReader.getNextChar();
             }
 
+            //checa se caractere lido é válido
             if(!verifyIsValidCharacter(currentCharacter)){
                 throw new CompilerError("caractere invalido.", currentLine);
             }
 
+            //checa qual o estado atual e encaminha para o próximo estado a partir do caractere lido
             switch (currentState) {
                 case 0:
                     if(currentCharacter == ' ' || currentCharacter == '\n' || currentCharacter == '\r') {
@@ -846,13 +858,16 @@ class LexicalAnalyzer {
                 default:
             }
 
+            //se caractere é quebra de linha, incrementa 1 na variável que representa qual a linha atual
             if(currentCharByte == 10 && lastCharacterByte == null){
                 currentLine++;
             }
 
+
             if(currentCharacter != null && lastCharacterByte == null)
                 currentLexeme += currentCharacter;
 
+            //se estado não é final, lê o próximo caractere
             if(currentState !=4)
                 currentCharByte = codeReader.getNextChar();
         }
@@ -860,42 +875,73 @@ class LexicalAnalyzer {
         return createLexicalRegister(currentLexeme, constType, constSize);
     }
 
+    /**
+     * Obtêm o registro léxico que representa final de arquivo
+     * @return LexicalRegister contendo Token.EOF
+     */
     private LexicalRegister createEOF(){
         Symbol symbol = new Symbol(Token.EOF, "eof");
         return new LexicalRegister(null,symbol, null, null);
     }
 
+    /**
+     * Cria ou procura um token na tabela a partir do lexema lido
+     * @param currentLexeme lexema lido
+     * @param constType tipo da constante
+     * @param constSize tamanho da constante
+     * @return LexicalRegister contendo informação sobre o token inserido/encontrado
+     */
     private LexicalRegister createLexicalRegister(String currentLexeme, ConstType constType, Integer constSize) {
         SymbolTableSearchResult result = null;
         Symbol symbol;
-        if(constType == null) {
-            result = symbolTable.search(currentLexeme);
-            if(result == null){
-                symbol = new Symbol(Token.ID, currentLexeme);
+        if(constType == null) { //se não é constante
+            result = symbolTable.search(currentLexeme); //procura lexema na tabela
+            if(result == null){ //se já não existe símbolo na tabela com o lexema lido
+                symbol = new Symbol(Token.ID, currentLexeme); //insere na tabela como um identificador
                 result = symbolTable.insert(symbol);
             }
-            else {
+            else { //se já existe símbolo na tabela com o lexema lido
                 symbol = result.symbol;
             }
         }
-        else {
+        else { //se é constante
             symbol = new Symbol(Token.CONST_VALUE, currentLexeme);
         }
         return new LexicalRegister(result, symbol, constType, constSize);
     }
 
+    /**
+     * Checa se caractere é válido para um hexadecimal
+     * @param c caractere a ser checado
+     * @return boolean - se caractere é válido (true) ou não (false)
+     */
     private boolean isCharHexadecimal(char c) {
        return isCharDigit(c) || c >= 'A' && c <= 'F';
     }
 
+    /**
+     * Checa se caractere é um dígito
+     * @param c caractere a ser checado
+     * @return boolean - se caractere é dígito (true) ou não (false)
+     */
     private boolean isCharDigit(char c) {
         return c>='0' && c<='9';
     }
 
+    /**
+     * Checa se caractere é um letra
+     * @param c caractere a ser checado
+     * @return boolean - se caractere é letra (true) ou não (false)
+     */
     private boolean isCharLetter(char c){
         return (c >= 'a' && c<='z') || (c>='A' && c<='Z');
     }
 
+    /**
+     * Checa se caractere é válido na linguagem
+     * @param c caractere a ser checado
+     * @return boolean - se caractere é válido (true) ou não (false)
+     */
     private boolean verifyIsValidCharacter(char c){
         return acceptedCharacters.contains(c);
     }
