@@ -1,6 +1,6 @@
 /**
  *  TP01 e T02 - Compiladores - 2021/2
- *  G07 - Bruno Duarte de Paula Assis, Gabriel Lopes Ferreira(619148), Giovanni Carlos Guaceroni(636206)
+ *  G07 - Bruno Duarte de Paula Assis (639985), Gabriel Lopes Ferreira(619148), Giovanni Carlos Guaceroni(636206)
  */
 
 import java.io.IOException;
