@@ -1132,9 +1132,16 @@ class LexicalRegister {
     }
 }
 
+/**
+ * Classe responsável por realizar a leitura do código.
+ */
 class CodeReader {
     InputStreamReader reader  = new InputStreamReader(System.in);
 
+    /**
+     * Método responsável por ler o próximo byte do programa.
+     * @return retorna o valor do byte lido.
+     */
     public int getNextChar() {
         try{
             return reader.read();
@@ -1146,18 +1153,29 @@ class CodeReader {
     }
 }
 
+/**
+ * Classe principal do compilador.
+ */
 public class Compiler {
+    /**
+     * Método main do programa.
+     * @param args parâmetros da main.
+     */
     public static void main(String[] args) {
         try{
             SyntaxAnalyzer syntaxAnalyzer = configureSyntaxAnalyzer();
             syntaxAnalyzer.startSyntaxAnalyzer();
-//            syntaxAnalyzer.testLexicalAnalyzer();
         }
         catch (CompilerError compilerError){
             compilerError.print();
         }
     }
 
+    /**
+     * Método responsável por inicializar o analisador sintático.
+     * @return Retorna analisador sintático.
+     * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
+     */
     public static SyntaxAnalyzer configureSyntaxAnalyzer() throws CompilerError{
         CodeReader codeReader = new CodeReader();
         LexicalAnalyzer lexicalAnalyzer = new LexicalAnalyzer(codeReader);
