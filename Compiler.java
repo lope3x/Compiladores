@@ -1,6 +1,6 @@
 /**
  *  TP01 e T02 - Compiladores - 2021/2
- *  G07 - Bruno Duarte de Paula Assis, Gabriel Lopes Ferreira(619148), Giovanni Carlos Guaceroni
+ *  G07 - Bruno Duarte de Paula Assis, Gabriel Lopes Ferreira(619148), Giovanni Carlos Guaceroni(636206)
  */
 
 import java.io.IOException;
@@ -99,11 +99,17 @@ class CompilerError extends Throwable {
     }
 }
 
+/**
+ * Classe para representar nossa tabela de símbolos que iramos usar durante a leitura do arquivo fonte.
+ */
 class SymbolTable {
     private static SymbolTable instance;
     final int size = 1000;
     ArrayList<ArrayList<Symbol>> table;
 
+    /**
+     * Construtor da classe
+     */
     private SymbolTable() {
         table = new ArrayList<>(size);
 
@@ -114,6 +120,9 @@ class SymbolTable {
         startTable();
     }
 
+    /**
+     * Função para pegar ou gerar a instância da tabela de símbolos.
+     */
     public static SymbolTable getInstance() {
         if(instance == null) {
             instance = new SymbolTable();
@@ -121,6 +130,9 @@ class SymbolTable {
         return instance;
     }
 
+    /**
+     * Função para inicializar nossa tabela de símbolos com todos os tokens já conhecidos.
+     */
     public void startTable() {
         Token[] tokensArray = Token.values();
 
@@ -132,6 +144,9 @@ class SymbolTable {
         }
     }
 
+    /**
+     * Função feita para inserir o símbolos na tabela, e caso já esteja existente concatenar com o já inserido.
+     */
     public SymbolTableSearchResult insert(Symbol symbol) {
         int positionInHash= hash(symbol.lexeme);
 
@@ -145,6 +160,9 @@ class SymbolTable {
         return new SymbolTableSearchResult(positionInHash, addedIndex, symbol);
     }
 
+    /**
+     * Função hash(que utiliza o valor do caractere na tabela ASCII), para inserir na nossa tabela de símbolos.
+     */
     public int hash(String lexeme) {
         int n = 0;
         for (int i = 0; i < lexeme.length(); i++) {
@@ -153,6 +171,9 @@ class SymbolTable {
         return n % size;
     }
 
+    /**
+     * Função para buscar na tabela de símbolos.
+     */
     public SymbolTableSearchResult search(String lexeme) {
         int positionInHash = hash(lexeme);
         ArrayList<Symbol> lexemeList = table.get(positionInHash);
@@ -167,6 +188,9 @@ class SymbolTable {
         return null;
     }
 
+    /**
+     * Função para printar a tabela.
+     */
     public void printTable() {
         for (ArrayList<Symbol> symbols: table) {
             if(symbols != null)
@@ -175,11 +199,18 @@ class SymbolTable {
     }
 }
 
+/**
+ * Classe que representa o símbolo encontrado, e sua posição na tabela
+ * hash, e caso esteja numa lista de lexemas, sua posição.
+ */
 class SymbolTableSearchResult {
     int positionInHash;
     int positionInArrayList;
     Symbol symbol;
 
+    /**
+     * Construtor da classe.
+     */
     SymbolTableSearchResult(int positionInHash, int positionInArrayList, Symbol symbol) {
         this.positionInHash = positionInHash;
         this.positionInArrayList = positionInArrayList;
@@ -200,10 +231,17 @@ class SymbolTableSearchResult {
     }
 }
 
+/**
+ * Classe que representa um símbolo, com as propriedades tipo do token e seu respectivo lexema.
+*/
+
 class Symbol {
     Token tokenType;
     String lexeme;
 
+    /**
+     * Construtor da classe.
+     */
     Symbol(Token token, String lexeme) {
         this.tokenType = token;
         this.lexeme = lexeme;
@@ -218,20 +256,35 @@ class Symbol {
     }
 }
 
+/**
+ * Classe em que implementamos o nosso analisador sintático.
+ */
 class SyntaxAnalyzer {
     LexicalAnalyzer lexicalAnalyzer;
     LexicalRegister currentRegister;
 
+    /**
+     * Construtor do analisador sintático, recebe como parâmetro o analisador léxico
+     * @param lexicalAnalyzer Instância do analisador léxico
+     */
     public SyntaxAnalyzer(LexicalAnalyzer lexicalAnalyzer) {
         this.lexicalAnalyzer = lexicalAnalyzer;
     }
 
+    /**
+     * Método responsável por iniciar a análise sintática.
+     * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
+     */
     public void startSyntaxAnalyzer() throws CompilerError {
         currentRegister = lexicalAnalyzer.getNextToken();
         start();
         System.out.println(lexicalAnalyzer.currentLine + " linhas compiladas.");
     }
 
+    /**
+     * Método que implementa o símbolo não terminal Start
+     * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
+     */
     private void start() throws CompilerError {
         boolean isOnDeclaration = isOnDeclarationFirst();
         boolean isOnCommand = isOnCommandFirst();
@@ -251,6 +304,10 @@ class SyntaxAnalyzer {
         matchToken(Token.EOF);
     }
 
+    /**
+     * Método que implementa o símbolo não terminal Declaration
+     * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
+     */
     private void declaration() throws CompilerError {
         if(isOnTypeFirst()){
             type();
@@ -272,6 +329,10 @@ class SyntaxAnalyzer {
 
     }
 
+    /**
+     * Método que implementa o símbolo não terminal DeclarationInit
+     * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
+     */
     private void declarationInit() throws CompilerError {
         matchToken(Token.ID);
         if(currentRegister.symbol.tokenType == Token.ATTRIBUTION){
@@ -283,6 +344,10 @@ class SyntaxAnalyzer {
         }
     }
 
+    /**
+     * Método que implementa o símbolo não terminal Type
+     * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
+     */
     private void type() throws CompilerError {
         Token currentToken = currentRegister.symbol.tokenType;
         if(currentToken == Token.INT){
@@ -299,6 +364,10 @@ class SyntaxAnalyzer {
         }
     }
 
+    /**
+     * Método que implementa o símbolo não terminal Block or Command
+     * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
+     */
     private void blockOrCommand() throws CompilerError {
         if(isOnCommandFirst()) {
             command();
@@ -308,6 +377,10 @@ class SyntaxAnalyzer {
         }
     }
 
+    /**
+     * Método que implementa o símbolo não terminal Block
+     * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
+     */
     private void block() throws CompilerError {
         matchToken(Token.LEFT_BRACE);
         while(isOnCommandFirst()){
@@ -316,6 +389,10 @@ class SyntaxAnalyzer {
         matchToken(Token.RIGHT_BRACE);
     }
 
+    /**
+     * Método que implementa o símbolo não terminal Command
+     * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
+     */
     private void command() throws CompilerError {
         Token currentToken = currentRegister.symbol.tokenType;
         if(currentToken == Token.ID){
@@ -357,6 +434,10 @@ class SyntaxAnalyzer {
         }
     }
 
+    /**
+     * Método que implementa o símbolo não terminal Expression
+     * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
+     */
     private void expression() throws CompilerError {
         expression1();
         while (isOnRelationalOperatorsFirst()){
@@ -365,6 +446,10 @@ class SyntaxAnalyzer {
         }
     }
 
+    /**
+     * Método que implementa o símbolo não terminal Expression1
+     * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
+     */
     private void expression1() throws CompilerError {
         if(currentRegister.symbol.tokenType == Token.MINUS){
             matchToken(Token.MINUS);
@@ -386,6 +471,10 @@ class SyntaxAnalyzer {
         }
     }
 
+    /**
+     * Método que implementa o símbolo não terminal Expression2
+     * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
+     */
     private void expression2() throws CompilerError {
         expression3();
         Token currentToken = currentRegister.symbol.tokenType;
@@ -412,6 +501,10 @@ class SyntaxAnalyzer {
         }
     }
 
+    /**
+     * Método que implementa o símbolo não terminal Expression3
+     * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
+     */
     private void expression3() throws CompilerError {
         while(currentRegister.symbol.tokenType == Token.NEGATION){
             matchToken(Token.NEGATION);
@@ -419,6 +512,10 @@ class SyntaxAnalyzer {
         expression4();
     }
 
+    /**
+     * Método que implementa o símbolo não terminal Expression4
+     * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
+     */
     private void expression4() throws CompilerError {
         Token currentToken = currentRegister.symbol.tokenType;
         if(currentToken == Token.INT || currentToken == Token.FLOAT){
@@ -438,6 +535,10 @@ class SyntaxAnalyzer {
         }
     }
 
+    /**
+     * Método que implementa o símbolo não terminal Expression5
+     * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
+     */
     private void expression5() throws CompilerError {
         if(currentRegister.symbol.tokenType == Token.OPEN_PARENTESIS){
             matchToken(Token.OPEN_PARENTESIS);
@@ -449,6 +550,10 @@ class SyntaxAnalyzer {
         }
     }
 
+    /**
+     * Método que implementa o símbolo não terminal Expression6
+     * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
+     */
     private void expression6() throws CompilerError {
         if(currentRegister.symbol.tokenType == Token.CONST_VALUE) {
             matchToken(Token.CONST_VALUE);
@@ -464,12 +569,20 @@ class SyntaxAnalyzer {
         }
     }
 
+    /**
+     * Método que implementa o símbolo não terminal Repetition
+     * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
+     */
     private void repetition() throws CompilerError {
         matchToken(Token.WHILE);
         expression();
         blockOrCommand();
     }
 
+    /**
+     * Método que implementa o símbolo não terminal Test
+     * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
+     */
     private void test() throws CompilerError {
         matchToken(Token.IF);
         expression();
@@ -480,6 +593,10 @@ class SyntaxAnalyzer {
         }
     }
 
+    /**
+     * Método que implementa o símbolo não terminal Write
+     * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
+     */
     private void write() throws CompilerError {
         matchToken(Token.OPEN_PARENTESIS);
         expression();
@@ -490,6 +607,10 @@ class SyntaxAnalyzer {
         matchToken(Token.CLOSE_PARENTESIS);
     }
 
+    /**
+     * Método que implementa o símbolo não terminal Relational Operator
+     * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
+     */
     private void relationalOperator() throws CompilerError {
         Token currentToken = currentRegister.symbol.tokenType;
         if(currentToken == Token.EQUAL){
@@ -512,6 +633,10 @@ class SyntaxAnalyzer {
         }
     }
 
+    /**
+     * Método que valida se o registro léxico atual está no first de Operators
+     * @return um booleano representando se está ou não no first
+     */
     private boolean isOnRelationalOperatorsFirst() {
         Token currentToken = currentRegister.symbol.tokenType;
 
@@ -520,12 +645,20 @@ class SyntaxAnalyzer {
                 currentToken == Token.GREATER_OR_EQUAL_THAN;
     }
 
+    /**
+     * Método que valida se o registro léxico atual está no first de Type
+     * @return um booleano representando se está ou não no first
+     */
     private boolean isOnTypeFirst() {
         Token currentToken = currentRegister.symbol.tokenType;
         return currentToken == Token.INT || currentToken == Token.FLOAT || currentToken == Token.STRING ||
                 currentToken == Token.CHAR;
     }
 
+    /**
+     * Método que valida se o registro léxico atual está no first de Command
+     * @return um booleano representando se está ou não no first
+     */
     private boolean isOnCommandFirst() {
         Token currentToken = currentRegister.symbol.tokenType;
         return currentToken == Token.ID || currentToken == Token.SEMICOLON || currentToken == Token.READ_LINE
@@ -533,11 +666,19 @@ class SyntaxAnalyzer {
                 || currentToken == Token.IF;
     }
 
+    /**
+     * Método que valida se o registro léxico atual está no first de Declaration
+     * @return um booleano representando se está ou não no first
+     */
     private boolean isOnDeclarationFirst() {
         Token currentToken = currentRegister.symbol.tokenType;
         return isOnTypeFirst()|| currentToken == Token.CONST;
     }
 
+    /**
+     * Método utilizado durante a construção do projeto para testar o analisador léxico
+     * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
+     */
     public void testLexicalAnalyzer() throws CompilerError {
         do {
             currentRegister = lexicalAnalyzer.getNextToken();
@@ -546,6 +687,12 @@ class SyntaxAnalyzer {
         System.out.println(lexicalAnalyzer.currentLine + " linhas compiladas.");
     }
 
+    /**
+     * Método casa token, é nele que validamos se o token atual é igual ao token esperado,
+     * caso seja solicitamos o próximo token para o léxico senão levantamos um erro de compilação.
+     * @param expectedToken Token esperado
+     * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
+     */
     private void matchToken(Token expectedToken) throws CompilerError {
         if(currentRegister.symbol.tokenType == expectedToken) {
             currentRegister = lexicalAnalyzer.getNextToken();
