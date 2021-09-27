@@ -1,6 +1,6 @@
 /**
  *  TP01 e T02 - Compiladores - 2021/2
- *  G07 - Bruno Duarte de Paula Assis, Gabriel Lopes Ferreira(619148), Giovanni Carlos Guaceroni
+ *  G07 - Bruno Duarte de Paula Assis, Gabriel Lopes Ferreira(619148), Giovanni Carlos Guaceroni(636206)
  */
 
 import java.io.IOException;
@@ -99,11 +99,17 @@ class CompilerError extends Throwable {
     }
 }
 
+/**
+ * Classe para representar nossa tabela de símbolos que iramos usar durante a leitura do arquivo fonte.
+ */
 class SymbolTable {
     private static SymbolTable instance;
     final int size = 1000;
     ArrayList<ArrayList<Symbol>> table;
 
+    /**
+     * Construtor da classe
+     */
     private SymbolTable() {
         table = new ArrayList<>(size);
 
@@ -114,6 +120,9 @@ class SymbolTable {
         startTable();
     }
 
+    /**
+     * Função para pegar ou gerar a instância da tabela de símbolos.
+     */
     public static SymbolTable getInstance() {
         if(instance == null) {
             instance = new SymbolTable();
@@ -121,6 +130,9 @@ class SymbolTable {
         return instance;
     }
 
+    /**
+     * Função para inicializar nossa tabela de símbolos com todos os tokens já conhecidos.
+     */
     public void startTable() {
         Token[] tokensArray = Token.values();
 
@@ -132,6 +144,9 @@ class SymbolTable {
         }
     }
 
+    /**
+     * Função feita para inserir o símbolos na tabela, e caso já esteja existente concatenar com o já inserido.
+     */
     public SymbolTableSearchResult insert(Symbol symbol) {
         int positionInHash= hash(symbol.lexeme);
 
@@ -145,6 +160,9 @@ class SymbolTable {
         return new SymbolTableSearchResult(positionInHash, addedIndex, symbol);
     }
 
+    /**
+     * Função hash(que utiliza o valor do caractere na tabela ASCII), para inserir na nossa tabela de símbolos.
+     */
     public int hash(String lexeme) {
         int n = 0;
         for (int i = 0; i < lexeme.length(); i++) {
@@ -153,6 +171,9 @@ class SymbolTable {
         return n % size;
     }
 
+    /**
+     * Função para buscar na tabela de símbolos.
+     */
     public SymbolTableSearchResult search(String lexeme) {
         int positionInHash = hash(lexeme);
         ArrayList<Symbol> lexemeList = table.get(positionInHash);
@@ -167,6 +188,9 @@ class SymbolTable {
         return null;
     }
 
+    /**
+     * Função para printar a tabela.
+     */
     public void printTable() {
         for (ArrayList<Symbol> symbols: table) {
             if(symbols != null)
@@ -175,11 +199,18 @@ class SymbolTable {
     }
 }
 
+/**
+ * Classe que representa o símbolo encontrado, e sua posição na tabela
+ * hash, e caso esteja numa lista de lexemas, sua posição.
+ */
 class SymbolTableSearchResult {
     int positionInHash;
     int positionInArrayList;
     Symbol symbol;
 
+    /**
+     * Construtor da classe.
+     */
     SymbolTableSearchResult(int positionInHash, int positionInArrayList, Symbol symbol) {
         this.positionInHash = positionInHash;
         this.positionInArrayList = positionInArrayList;
@@ -200,10 +231,17 @@ class SymbolTableSearchResult {
     }
 }
 
+/**
+ * Classe que representa um símbolo, com as propriedades tipo do token e seu respectivo lexema.
+*/
+
 class Symbol {
     Token tokenType;
     String lexeme;
 
+    /**
+     * Construtor da classe
+     */
     Symbol(Token token, String lexeme) {
         this.tokenType = token;
         this.lexeme = lexeme;
