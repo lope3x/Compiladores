@@ -1,9 +1,17 @@
+/**
+ *  TP01 e T02 - Compiladores - 2021/2
+ *  G07 - Bruno Duarte de Paula Assis, Gabriel Lopes Ferreira(619148), Giovanni Carlos Guaceroni
+ */
+
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 
+/**
+ *  Enum responsável por representar os tokens da linguagem
+ */
 enum Token {
     INT("int"),
     CHAR("char"),
@@ -51,6 +59,9 @@ enum Token {
     }
 }
 
+/**
+ *  Enum responsável por representar os tipos de constantes possíveis na linguagem.
+ */
 enum ConstType {
     INT,
     HEX,
@@ -58,6 +69,10 @@ enum ConstType {
     FLOAT,
     STRING
 }
+
+/**
+ * Classe pra armazenar valores que são constantes ao longo do programa.
+ */
 class Constants {
     public static int DecimalPrecision = 6;
     public static int idMaxLength = 32;
@@ -67,6 +82,9 @@ class Constants {
     public static int HexBytesSize = 1;
 }
 
+/**
+ *  Classe que utilizamos para representar os erros encontrados durante a compilação.
+ */
 class CompilerError extends Throwable {
     private final int line;
     private final String message;
