@@ -1,9 +1,9 @@
 Start -> {Declaração; | Comando} EOF
 Bloco_ou_Comando -> Comando | Bloco
 Bloco -> "{"{Comando}"}"
-Tipo -> int | float | string | char
-Declaração -> Tipo Declaração_Init {,Declaração_Init} | const id = [-] const_value
-Declaração_Init -> id [<- [-] const_value]
+Tipo -> int (3) | float (4) | string (5) | char (6)
+Declaração -> Tipo (7) Declaração_Init {, (7) Declaração_Init} | const id = [-] const_value (1)
+Declaração_Init -> (2) id [<- [-] const_value]
 Escrita -> "("Expressão {, Expressão} ")"
 Comando -> id ["["Expressão"]"] <- Expressão ; | Repetição | Teste | ; | readln"("id")" ; | (write| writeln) Escrita ;
 Repetição -> while Expressão Bloco_ou_Comando
@@ -18,50 +18,13 @@ Expressão5 -> "(" Expressão ")" | Expressão6
 Expressão6 -> const_value | id ["[" Expressão "]"]
 
 
-
-
-
-
-while 5< 3{
-
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-First
-Start: int , float , string , char , const , id, ;, readln, write, writeln, while, if, {
-Bloco_ou_Comando: id, ;, readln, write, writeln, while, if, {
-Bloco: {
-Comando: id, ;, readln, write, writeln, while, if
-Repetição: while
-Teste: if
-Declaração: int | float | string | char | const
-Declaração_Init: id
-Escrita: (
-Operadores_Relacional: = | != | < | > | <= | >=
-Expressão6: const_value, id 
-Expressão5: (, const_value, id 
-Expressão4: int, float, (, const_value, id 
-Expressão3: !, int, float, (, const_value, id 
-Expressão2: !, int, float, (, const_value, id 
-Expressão1: !, int, float, (, const_value, id
-Expressão: !, int, float, (, const_value, id
+Esquema de Tradução:
+1 { id.class = CONST, id.type = const_value.type }  // Validar se não foi setado o type previamente
+2 { id.class = VAR, id.type = Declaração_Init.type } // Validar se não foi setado o type previamente
+3 { Tipo.type = int.type }
+4 { Tipo.type = float.type }
+5 { Tipo.type = string.type }
+6 { Tipo.type = char.type }
+7 { Declaração_Init.type = Tipo.type }
 
 

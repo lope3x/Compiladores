@@ -70,6 +70,18 @@ enum ConstType {
     STRING
 }
 
+enum Class {
+    VAR,
+    CONST
+}
+
+enum Type {
+    INTEGER,
+    REAL,
+    CHARACTER,
+    STRING
+}
+
 /**
  * Classe pra armazenar valores que são constantes ao longo do programa.
  */
@@ -238,6 +250,8 @@ class SymbolTableSearchResult {
 class Symbol {
     Token tokenType;
     String lexeme;
+    Class idClass; // Somente tokens ID terão esse valor setado
+    Type idType; // Somente tokens ID terão esse valor setado
 
     /**
      * Construtor da classe.
@@ -252,7 +266,41 @@ class Symbol {
         return "Symbol{" +
                 "tokenType=" + tokenType +
                 ", lexeme='" + lexeme + '\'' +
+                ", idClass=" + idClass +
+                ", idType=" + idType +
                 '}';
+    }
+}
+
+class SemanticAnalyzer {
+    LexicalAnalyzer lexicalAnalyzer;
+
+    public SemanticAnalyzer(LexicalAnalyzer lexicalAnalyzer) {
+        this.lexicalAnalyzer = lexicalAnalyzer;
+    }
+
+    public void semanticAction1(LexicalRegister id, LexicalRegister constValue) throws CompilerError {
+        if (id.symbol.idClass == null) {
+            id.symbol.idClass = Class.CONST;
+            switch (constValue.constType) {
+                case HEX:
+                case CHAR:
+                    id.symbol.idType = Type.CHARACTER;
+                    break;
+                case INT:
+                    id.symbol.idType = Type.INTEGER;
+                    break;
+                case FLOAT:
+                    id.symbol.idType = Type.REAL;
+                    break;
+                case STRING:
+                    id.symbol.idType = Type.STRING;
+                    break;
+            }
+        }
+        else {
+            throw new CompilerError("identificador ja declarado ["+ id.symbol.lexeme +"]", lexicalAnalyzer.currentLine);
+        }
     }
 }
 
@@ -261,6 +309,7 @@ class Symbol {
  */
 class SyntaxAnalyzer {
     LexicalAnalyzer lexicalAnalyzer;
+    SemanticAnalyzer semanticAnalyzer;
     LexicalRegister currentRegister;
 
     /**
@@ -269,6 +318,7 @@ class SyntaxAnalyzer {
      */
     public SyntaxAnalyzer(LexicalAnalyzer lexicalAnalyzer) {
         this.lexicalAnalyzer = lexicalAnalyzer;
+        this.semanticAnalyzer = new SemanticAnalyzer(lexicalAnalyzer);
     }
 
     /**
@@ -319,12 +369,15 @@ class SyntaxAnalyzer {
         }
         else {
             matchToken(Token.CONST);
+            LexicalRegister id = currentRegister;
             matchToken(Token.ID);
             matchToken(Token.EQUAL);
             if(currentRegister.symbol.tokenType == Token.MINUS){
                 matchToken(Token.MINUS);
             }
+            LexicalRegister constValue =  currentRegister;
             matchToken(Token.CONST_VALUE);
+            semanticAnalyzer.semanticAction1(id, constValue);
         }
 
     }
