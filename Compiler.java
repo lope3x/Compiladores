@@ -270,6 +270,10 @@ class Symbol {
                 ", idType=" + idType +
                 '}';
     }
+
+    public void print() {
+        System.out.println(this);
+    }
 }
 
 class SemanticAnalyzer {
@@ -299,9 +303,26 @@ class SemanticAnalyzer {
             }
         }
         else {
-            throw new CompilerError("identificador ja declarado ["+ id.symbol.lexeme +"]", lexicalAnalyzer.currentLine);
+            throw new CompilerError("identificador ja declarado ["+ id.symbol.lexeme +"].", lexicalAnalyzer.currentLine);
         }
     }
+
+    public void semanticAction2(LexicalRegister id, Type declarationInitType) throws CompilerError {
+        if (id.symbol.idClass == null) {
+            id.symbol.idClass = Class.VAR;
+            id.symbol.idType = declarationInitType;
+        }
+        else {
+            throw new CompilerError("identificador ja declarado ["+ id.symbol.lexeme +"].", lexicalAnalyzer.currentLine);
+        }
+    }
+
+    public void semanticAction4(LexicalRegister id) throws CompilerError {
+        if(id.symbol.idClass == null) {
+            throw new CompilerError("identificador nao declarado ["+ id.symbol.lexeme +"].", lexicalAnalyzer.currentLine);
+        }
+    }
+
 }
 
 /**
@@ -360,11 +381,11 @@ class SyntaxAnalyzer {
      */
     private void declaration() throws CompilerError {
         if(isOnTypeFirst()){
-            type();
-            declarationInit();
+            Type declarationInitType = types(); // Ação semantica 3
+            declarationInit(declarationInitType);
             while(currentRegister.symbol.tokenType == Token.COMMA) {
                 matchToken(Token.COMMA);
-                declarationInit();
+                declarationInit(declarationInitType);
             }
         }
         else {
@@ -386,8 +407,10 @@ class SyntaxAnalyzer {
      * Método que implementa o símbolo não terminal DeclarationInit
      * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
      */
-    private void declarationInit() throws CompilerError {
+    private void declarationInit(Type declarationInitType) throws CompilerError {
+        LexicalRegister id = currentRegister;
         matchToken(Token.ID);
+        semanticAnalyzer.semanticAction2(id, declarationInitType);
         if(currentRegister.symbol.tokenType == Token.ATTRIBUTION){
             matchToken(Token.ATTRIBUTION);
             if(currentRegister.symbol.tokenType == Token.MINUS){
@@ -401,20 +424,27 @@ class SyntaxAnalyzer {
      * Método que implementa o símbolo não terminal Type
      * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
      */
-    private void type() throws CompilerError {
+    private Type types() throws CompilerError {
         Token currentToken = currentRegister.symbol.tokenType;
+        Type returnType;
         if(currentToken == Token.INT){
             matchToken(Token.INT);
+            returnType = Type.INTEGER;
         }
         else if(currentToken == Token.FLOAT){
             matchToken(Token.FLOAT);
+            returnType = Type.REAL;
         }
         else if(currentToken == Token.STRING){
             matchToken(Token.STRING);
+            returnType = Type.STRING;
         }
         else {
             matchToken(Token.CHAR);
+            returnType = Type.CHARACTER;
         }
+
+        return returnType;
     }
 
     /**
@@ -449,7 +479,9 @@ class SyntaxAnalyzer {
     private void command() throws CompilerError {
         Token currentToken = currentRegister.symbol.tokenType;
         if(currentToken == Token.ID){
+            LexicalRegister id = currentRegister;
             matchToken(Token.ID);
+            semanticAnalyzer.semanticAction4(id);
             if (currentRegister.symbol.tokenType != Token.ATTRIBUTION) {
                 matchToken(Token.LEFT_SQUARE_BRACKET);
                 expression();
@@ -471,7 +503,9 @@ class SyntaxAnalyzer {
         else if(currentToken == Token.READ_LINE){
             matchToken(Token.READ_LINE);
             matchToken(Token.OPEN_PARENTESIS);
+            LexicalRegister id = currentRegister;
             matchToken(Token.ID);
+            semanticAnalyzer.semanticAction4(id);
             matchToken(Token.CLOSE_PARENTESIS);
             matchToken(Token.SEMICOLON);
         }
@@ -612,8 +646,9 @@ class SyntaxAnalyzer {
             matchToken(Token.CONST_VALUE);
         }
         else {
+            LexicalRegister id = currentRegister;
             matchToken(Token.ID);
-
+            semanticAnalyzer.semanticAction4(id);
             if(currentRegister.symbol.tokenType == Token.LEFT_SQUARE_BRACKET){
                 matchToken(Token.LEFT_SQUARE_BRACKET);
                 expression();
