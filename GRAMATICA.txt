@@ -2,16 +2,16 @@ Start -> {Declaração; | Comando} EOF
 Bloco_ou_Comando -> Comando | Bloco
 Bloco -> "{"{Comando}"}"
 Tipo -> int  | float | string | char
-Declaração -> Tipo (3) Declaração_Init {, (7) Declaração_Init} | const id = [-] const_value (1)
+Declaração -> Tipo (3) Declaração_Init {, Declaração_Init} | const id = [-] const_value (1)
 Declaração_Init ->  id (2) [<- [-] const_value]
 Escrita -> "("Expressão {, Expressão} ")"
-Comando -> id (4) ["["Expressão"]"] <- Expressão ; | Repetição | Teste | ; | readln"("id (5) ")" ; | (write| writeln) Escrita ;
-Repetição -> while Expressão Bloco_ou_Comando
-Teste -> if Expressão Bloco_ou_Comando [else Bloco_ou_Comando]
-Operadores_Relacional -> = | != | < | > | <= | >=
-Expressão -> Expressão1 { Operadores_Relacional Expressão1}
-Expressão1 -> [-] Expressão2 {(- | + | || )  Expressão2}
-Expressão2 -> Expressão3 {(* | && | / | div | mod) Expressão3}
+Comando -> id (5) ["["Expressão"]"(7)] <- Expressão (6) ; | Repetição | Teste | ; | readln"("id (5) ")" ; | (write| writeln) Escrita ;
+Repetição -> while Expressão (8) Bloco_ou_Comando
+Teste -> if Expressão (8) Bloco_ou_Comando [else Bloco_ou_Comando]
+Operadores_Relacional -> = (11) | != (12) | < (12)| > (12) | <= (12) | >= (12)
+Expressão -> Expressão1_1 (9) { Operadores_Relacional Expressão1_2 (10) (13) }
+Expressão1 -> [-] Expressão2_1 {(- | + | || )  Expressão2_2 (13) (14) }
+Expressão2 -> Expressão3 {(* | && | / | div | mod) Expressão3 (13)}
 Expressão3 -> {!} Expressão4
 Expressão4 -> ( (int | float) "("Expressão")"  | Expressão5)
 Expressão5 -> "(" Expressão ")" | Expressão6
@@ -27,9 +27,71 @@ Esquema de Tradução:
         error
  }
 
-//Perguntar pro prof
 5 {
       se id.class == null ou id.class == constante então:
           error
 }
 
+6 {
+    se comando.hasStringAccess && Expressão.type != char então:
+        error
+    senão se id.type != Expressão.type então:
+        error
+    //Confirmar depois se atribuir um valor inteiro a um id float deve ser considerado como erro ou não.
+}
+
+7 {
+    se id.type != String então:
+        error
+    senão se expressão.type != inteiro então:
+        error
+    senão:
+        comando.hasStringAccess = true
+}
+
+8 {
+    se expressão.type != booleano então:
+        error
+}
+
+9 {
+    expressão.type = expressão1.type
+}
+
+
+10 {
+    expressão.type = boolean
+    se expressão1_1.type == string && expressão1_2.type == string:
+        se operadores_relacional.isEqual == false:
+            error
+    senão expressão1_1.type == string || expressão1_2.type == string:
+        error
+}
+
+11 {
+    Operadores_Relacional.isEqual = true
+}
+
+12 {
+    Operadores_Relacional.isEqual = false
+}
+
+13 {
+    // X = {1,2,3}
+   se expressãoX_1.type == inteiro && expressãoX_2.type == char:
+        error
+   senão expressãoX_2.type == inteiro &&  expressãoX_1.type == char:
+        error
+}
+
+14 {
+    se expressão2_1 == string ou expressão2_2 == string:
+        error
+    se operador == + ou operador == - então:
+        se expressão2_1 == float ou expressão 2_2 == float:
+            expressão1 = float
+        senão:
+            expressão1 = inteiro
+    senão:
+        expressão1 = booleano
+}

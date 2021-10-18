@@ -323,6 +323,17 @@ class SemanticAnalyzer {
         }
     }
 
+    public void semanticAction5(LexicalRegister id) throws CompilerError {
+        if(id.symbol.idClass == null) {
+            throw new CompilerError("identificador nao declarado ["+ id.symbol.lexeme +"].", lexicalAnalyzer.currentLine);
+        }
+        else if(id.symbol.idClass == Class.CONST) {
+            throw new CompilerError("classe de identificador incompatível ["+ id.symbol.lexeme +"].", lexicalAnalyzer.currentLine);
+        }
+    }
+
+
+
 }
 
 /**
@@ -481,8 +492,10 @@ class SyntaxAnalyzer {
         if(currentToken == Token.ID){
             LexicalRegister id = currentRegister;
             matchToken(Token.ID);
-            semanticAnalyzer.semanticAction4(id);
+            semanticAnalyzer.semanticAction5(id);
+            boolean hasStringAccess = false;
             if (currentRegister.symbol.tokenType != Token.ATTRIBUTION) {
+                hasStringAccess = true;
                 matchToken(Token.LEFT_SQUARE_BRACKET);
                 expression();
                 matchToken(Token.RIGHT_SQUARE_BRACKET);
@@ -505,7 +518,7 @@ class SyntaxAnalyzer {
             matchToken(Token.OPEN_PARENTESIS);
             LexicalRegister id = currentRegister;
             matchToken(Token.ID);
-            semanticAnalyzer.semanticAction4(id);
+            semanticAnalyzer.semanticAction5(id);
             matchToken(Token.CLOSE_PARENTESIS);
             matchToken(Token.SEMICOLON);
         }
