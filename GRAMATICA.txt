@@ -10,8 +10,10 @@ Repetição -> while Expressão (8) Bloco_ou_Comando
 Teste -> if Expressão (8) Bloco_ou_Comando [else Bloco_ou_Comando]
 Operadores_Relacional -> = (11) | != (12) | < (12)| > (12) | <= (12) | >= (12)
 Expressão -> Expressão1_1 (9) { Operadores_Relacional Expressão1_2 (10) (13) }
-Expressão1 -> [-] Expressão2_1 {(- | + | || )  Expressão2_2 (13) (14) }
-Expressão2 -> Expressão3 {(* | && | / | div | mod) Expressão3 (13)}
+Expressão1 -> [-] Expressão2_1 {(- | + | || )  Expressão2_2 (13) (14)}
+Expressão2 -> Expressão3 {(* | && | / | div | mod) Expressão3 (13) (15)}
+
+Falta fazer:
 Expressão3 -> {!} Expressão4
 Expressão4 -> ( (int | float) "("Expressão")"  | Expressão5)
 Expressão5 -> "(" Expressão ")" | Expressão6
@@ -35,9 +37,10 @@ Esquema de Tradução:
 6 {
     se comando.hasStringAccess && Expressão.type != char então:
         error
+    senão se id.type == float && expressão.type == inteiro:
+        certo
     senão se id.type != Expressão.type então:
         error
-    //Confirmar depois se atribuir um valor inteiro a um id float deve ser considerado como erro ou não.
 }
 
 7 {
@@ -94,4 +97,18 @@ Esquema de Tradução:
             expressão1 = inteiro
     senão:
         expressão1 = booleano
+}
+
+15 {
+    se expressão3_1 == string ou expressão3_2 == string:
+         error
+    se operador == / então:
+        expressão2 = float
+    senão se operador == * então:
+        se expressão3_1 == float ou expressão 3_2 == float:
+            expressão2 = float
+        senão:
+            expressão2 = inteiro
+    senão se operador == && então:
+        experessão
 }
