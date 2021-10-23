@@ -8,10 +8,10 @@ Escrita -> "("Expressão {, Expressão} ")"
 Comando -> id (5) ["["Expressão"]"(7)] <- Expressão (6) ; | Repetição | Teste | ; | readln"("id (5) ")" ; | (write| writeln) Escrita ;
 Repetição -> while Expressão (8) Bloco_ou_Comando
 Teste -> if Expressão (8) Bloco_ou_Comando [else Bloco_ou_Comando]
-Operadores_Relacional -> = (11) | != (12) | < (12)| > (12) | <= (12) | >= (12)
-Expressão -> Expressão1_1 (9) { Operadores_Relacional Expressão1_2 (10) (13) }
-Expressão1 -> [-] Expressão2_1 {(- | + | || )  Expressão2_2 (13) (14)}
-Expressão2 -> Expressão3 {(* | && | / | div | mod) Expressão3 (13) (15)}
+Operadores_Relacional -> = (11) | != (12) | < (13)| > (14) | <= (15) | >= (16)
+Expressão -> Expressão1_1 (9) { Operadores_Relacional Expressão1_2 (10)}
+Expressão1 -> [- (21)]  Expressão2_1 (22) {(- (18) | + (19) | || (20) )  Expressão2_2 (17)}
+Expressão2 -> Expressão3_1 {(*(24) | &&(25) | /(26) | div (27)| mod(28)) Expressão3_2 (23)}
 
 Falta fazer:
 Expressão3 -> {!} Expressão4
@@ -61,54 +61,112 @@ Esquema de Tradução:
     expressão.type = expressão1.type
 }
 
-
 10 {
     expressão.type = boolean
-    se expressão1_1.type == string && expressão1_2.type == string:
-        se operadores_relacional.isEqual == false:
+    se (expressão1_1.type == inteiro || expressão1_1.type == float) && expressão1_2.type == char:
+            error
+    senão se (expressão1_2.type == inteiro == expressão1_2.type == float) && expressão1_1.type == char:
+        error
+    senão expressão1_1.type == string && expressão1_2.type == string:
+        se operadores_relacional.isEqualOperator == false:
             error
     senão expressão1_1.type == string || expressão1_2.type == string:
         error
 }
 
 11 {
-    Operadores_Relacional.isEqual = true
+    Operadores_Relacional.operator = '='
 }
 
 12 {
-    Operadores_Relacional.isEqual = false
+    Operadores_Relacional.operator = '!='
 }
 
 13 {
-    // X = {1,2,3}
-   se expressãoX_1.type == inteiro && expressãoX_2.type == char:
-        error
-   senão expressãoX_2.type == inteiro &&  expressãoX_1.type == char:
-        error
+    Operadores_Relacional.operator = '<'
 }
 
 14 {
-    se expressão2_1 == string ou expressão2_2 == string:
-        error
-    se operador == + ou operador == - então:
-        se expressão2_1 == float ou expressão 2_2 == float:
-            expressão1 = float
-        senão:
-            expressão1 = inteiro
-    senão:
-        expressão1 = booleano
+    Operadores_Relacional.operator = '>'
 }
 
 15 {
-    se expressão3_1 == string ou expressão3_2 == string:
-         error
-    se operador == / então:
-        expressão2 = float
-    senão se operador == * então:
-        se expressão3_1 == float ou expressão 3_2 == float:
-            expressão2 = float
-        senão:
-            expressão2 = inteiro
-    senão se operador == && então:
-        experessão
+    Operadores_Relacional.operator = '<='
+}
+
+16 {
+    Operadores_Relacional.operator = '>='
+}
+17 {
+    se Expressão2_1.type == string || Expressão2_1.type == char || Expressão2_2.type == string || Expressão2_2.type == char:
+        error
+    se Expressão2_1.type == boolean && Expressão2_2.type == boolean:
+        Expressão1.type = boolean
+        se Expressão1.operadorAtual != '||':
+            error
+    senão Expressão2_1.type == boolean || Expressão2_2.type == boolean:
+        error
+    senão Expressão2_1.type == float || Expressão2_2.type == float:
+        expressão1.type = float
+    senão:
+        expressão1.type = int
+    se Expressão2.operadorAtual == '||':
+        error
+}
+
+18 {
+    Expressão1.operadorAtual = '-'
+}
+19 {
+    Expressão1.operadorAtual = '+'
+}
+20 {
+    Expressão1.operadorAtual = '||'
+}
+
+21 {
+    Expressão1.isNegative = true
+}
+
+22 {
+    se Expressão2_1.type == boolean && Expressão1.isNegative:
+        error
+}
+
+Expressão2 -> Expressão3_1 {(*(24) | &&(25) | /(26) | div (27)| mod(28)) Expressão3_2 (23)}
+23 {
+      se Expressão3_1.type == string || Expressão3_1.type == char || Expressão3_2.type == string || Expressão3_2.type == char:
+             error
+      se Expressão3_1.type == boolean && Expressão3_2.type == boolean:
+          Expressão2.type = boolean
+          se Expressão2.operadorAtual != '&&':
+              error
+      senão Expressão3_1.type == boolean || Expressão3_2.type == boolean:
+          error
+      senão Expressão3_1.type == float || Expressão3_2.type == float:
+          expressão2.type = float
+          se Expressão2.operadorAtual == 'div' || Expressão2.operadorAtual == 'mod':
+            error
+      senão:
+          expressão2.type = int
+      se Expressão2.operadorAtual == '&&':
+        error
+}
+
+24 {
+    Expressão1.operadorAtual = '*'
+}
+25 {
+    Expressão1.operadorAtual = '&&'
+}
+26 {
+    Expressão1.operadorAtual = '/'
+}
+
+27 {
+     Expressão1.operadorAtual = 'div'
+}
+
+28 {
+     Expressão1.operadorAtual = 'mod'
 }
