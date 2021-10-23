@@ -9,7 +9,7 @@ Comando -> id (5) ["["Expressão"]"(7)] <- Expressão (6) ; | Repetição | Test
 Repetição -> while Expressão (8) Bloco_ou_Comando
 Teste -> if Expressão (8) Bloco_ou_Comando [else Bloco_ou_Comando]
 Operadores_Relacional -> = (11) | != (12) | < (13)| > (14) | <= (15) | >= (16)
-Expressão -> Expressão1_1 (9) { Operadores_Relacional Expressão1_2 (10)}
+Expressão -> Expressão1_1 (9) [Operadores_Relacional Expressão1_2 (10)]
 Expressão1 -> [- (21)] Expressão2_1 (22) {(- (18) | + (19) | || (20) )  Expressão2_2 (17)}
 Expressão2 -> Expressão3_1(31) {(*(24) | &&(25) | /(26) | div (27)| mod(28)) Expressão3_2 (23)}
 Expressão3 -> {!(29)} Expressão4 (30)
@@ -31,7 +31,9 @@ Esquema de Tradução:
     senão:
         error
 }
-3 { Declaração_Init.type = Tipo.type }
+3 {
+    Declaração_Init.type = Tipo.type
+}
 4 {
     se id.class == null então:
         error
@@ -45,8 +47,8 @@ Esquema de Tradução:
 6 {
     se comando.hasStringAccess && Expressão.type != char então:
         error
-    senão se id.type == float && expressão.type == inteiro:
-        certo
+    senão se id.type == float && (expressão.type != inteiro && expressão.type != float) :
+        error
     senão se id.type != Expressão.type então:
         error
 }
@@ -66,7 +68,7 @@ Esquema de Tradução:
 }
 
 9 {
-    expressão.type = expressão1.type
+    expressão.type = expressão1_1.type
 }
 
 10 {
@@ -79,6 +81,8 @@ Esquema de Tradução:
         se operadores_relacional.isEqualOperator == false:
             error
     senão expressão1_1.type == string || expressão1_2.type == string:
+        error
+    senão se expressão1_1.type == boolean || expressão1_2.type == boolean:
         error
 }
 

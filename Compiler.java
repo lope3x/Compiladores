@@ -540,7 +540,7 @@ class SyntaxAnalyzer {
      */
     private void expression() throws CompilerError {
         expression1();
-        while (isOnRelationalOperatorsFirst()){
+        if (isOnRelationalOperatorsFirst()){
             relationalOperator();
             expression1();
         }
