@@ -1,7 +1,7 @@
 Start -> {Declaração; | Comando} EOF
 Bloco_ou_Comando -> Comando | Bloco
 Bloco -> "{"{Comando}"}"
-Tipo -> int  | float | string | char
+Tipo -> int (39) | float (40) | string (41) | char (42)
 Declaração -> Tipo (3) Declaração_Init {, Declaração_Init} | const id = [-] const_value (1)
 Declaração_Init ->  id (2) [<- [-] const_value]
 Escrita -> "("Expressão {, Expressão} ")"
@@ -10,19 +10,27 @@ Repetição -> while Expressão (8) Bloco_ou_Comando
 Teste -> if Expressão (8) Bloco_ou_Comando [else Bloco_ou_Comando]
 Operadores_Relacional -> = (11) | != (12) | < (13)| > (14) | <= (15) | >= (16)
 Expressão -> Expressão1_1 (9) { Operadores_Relacional Expressão1_2 (10)}
-Expressão1 -> [- (21)]  Expressão2_1 (22) {(- (18) | + (19) | || (20) )  Expressão2_2 (17)}
-Expressão2 -> Expressão3_1 {(*(24) | &&(25) | /(26) | div (27)| mod(28)) Expressão3_2 (23)}
-
-Falta fazer:
-Expressão3 -> {!} Expressão4
-Expressão4 -> ( (int | float) "("Expressão")"  | Expressão5)
-Expressão5 -> "(" Expressão ")" | Expressão6
-Expressão6 -> const_value | id (4) ["[" Expressão "]"]
+Expressão1 -> [- (21)] Expressão2_1 (22) {(- (18) | + (19) | || (20) )  Expressão2_2 (17)}
+Expressão2 -> Expressão3_1(31) {(*(24) | &&(25) | /(26) | div (27)| mod(28)) Expressão3_2 (23)}
+Expressão3 -> {!(29)} Expressão4 (30)
+Expressão4 -> ( (int | float) "("Expressão (32)")"  | Expressão5 (33))
+Expressão5 -> "(" Expressão (34) ")" | Expressão6 (35)
+Expressão6 -> const_value (36) | id (4) ["[" Expressão (37) "]"] (38)
 
 
 Esquema de Tradução:
-1 { id.class = CONST, id.type = const_value.type }  // Validar se não foi setado o type previamente
-2 { id.class = VAR, id.type = Declaração_Init.type } // Validar se não foi setado o type previamente
+1 {
+    se id.class == null:
+        id.class = CONST, id.type = const_value.type
+    senão:
+        error
+}
+2 {
+    se id.class == null:
+        id.class = VAR, id.type = Declaração_Init.type
+    senão:
+        error
+}
 3 { Declaração_Init.type = Tipo.type }
 4 {
     se id.class == null então:
@@ -131,6 +139,7 @@ Esquema de Tradução:
 22 {
     se Expressão2_1.type == boolean && Expressão1.isNegative:
         error
+    Expressão1.type = Expressão2_1.type
 }
 
 Expressão2 -> Expressão3_1 {(*(24) | &&(25) | /(26) | div (27)| mod(28)) Expressão3_2 (23)}
@@ -154,19 +163,83 @@ Expressão2 -> Expressão3_1 {(*(24) | &&(25) | /(26) | div (27)| mod(28)) Expre
 }
 
 24 {
-    Expressão1.operadorAtual = '*'
+    Expressão2.operadorAtual = '*'
 }
 25 {
-    Expressão1.operadorAtual = '&&'
+    Expressão2.operadorAtual = '&&'
 }
 26 {
-    Expressão1.operadorAtual = '/'
+    Expressão2.operadorAtual = '/'
 }
 
 27 {
-     Expressão1.operadorAtual = 'div'
+    Expressão2.operadorAtual = 'div'
 }
 
 28 {
-     Expressão1.operadorAtual = 'mod'
+    Expressão2.operadorAtual = 'mod'
+}
+
+29 {
+   Expressão3.hasExclamationOperator = true
+}
+
+30 {
+    se Expressão3.hasExclamationOperator && Expressão4.type != boolean:
+        error
+    Expressão3.type = Expressão4.type
+}
+
+31 {
+    Expressão2.type = Expressão3_1.type
+}
+
+32 {
+    se Expressão.type != int || Expressão.type != float:
+        error
+    Expresão4.type = Expressão.type
+}
+
+33 {
+    Expresão4.type = Expressão5.type
+}
+
+
+34 {
+    Expressão5.type = Expressão.type
+}
+
+35 {
+    Expressão5.type = Expressão6.type
+}
+
+
+36 {
+    Expressão6.type = const_value.type
+}
+
+
+37 {
+    se expressão.type != inteiro então:
+          error
+}
+
+38 {
+    Expressão6.type = id.type
+}
+
+39 {
+    Tipo.type = int
+}
+
+40 {
+    Tipo.type = float
+}
+
+41 {
+    Tipo.type = string
+}
+
+42 {
+    Tipo.type = char
 }
