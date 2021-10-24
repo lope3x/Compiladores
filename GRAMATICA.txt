@@ -9,6 +9,7 @@ Comando -> id (5) ["["Expressão"]"(7)] <- Expressão (6) ; | Repetição | Test
 Repetição -> while Expressão (8) Bloco_ou_Comando
 Teste -> if Expressão (8) Bloco_ou_Comando [else Bloco_ou_Comando]
 Operadores_Relacional -> = (11) | != (12) | < (13)| > (14) | <= (15) | >= (16)
+
 Expressão -> Expressão1_1 (9) [Operadores_Relacional Expressão1_2 (10)]
 Expressão1 -> [- (21)] Expressão2_1 (22) {(- (18) | + (19) | || (20) )  Expressão2_2 (17)}
 Expressão2 -> Expressão3_1(31) {(*(24) | &&(25) | /(26) | div (27)| mod(28)) Expressão3_2 (23)}
@@ -19,18 +20,21 @@ Expressão6 -> const_value (36) | id (4) ["[" Expressão (37) "]"] (38)
 
 
 Esquema de Tradução:
+Done
 1 {
     se id.class == null:
         id.class = CONST, id.type = const_value.type
     senão:
         error
 }
+Done
 2 {
     se id.class == null:
         id.class = VAR, id.type = Declaração_Init.type
     senão:
         error
 }
+Done
 3 {
     Declaração_Init.type = Tipo.type
 }
@@ -38,7 +42,7 @@ Esquema de Tradução:
     se id.class == null então:
         error
  }
-
+Done
 5 {
       se id.class == null ou id.class == constante então:
           error
@@ -78,7 +82,7 @@ Esquema de Tradução:
     senão se (expressão1_2.type == inteiro == expressão1_2.type == float) && expressão1_1.type == char:
         error
     senão expressão1_1.type == string && expressão1_2.type == string:
-        se operadores_relacional.isEqualOperator == false:
+        se operadores_relacional.operator != '=':
             error
     senão expressão1_1.type == string || expressão1_2.type == string:
         error
@@ -231,19 +235,19 @@ Expressão2 -> Expressão3_1 {(*(24) | &&(25) | /(26) | div (27)| mod(28)) Expre
 38 {
     Expressão6.type = id.type
 }
-
+Done
 39 {
     Tipo.type = int
 }
-
+Done
 40 {
     Tipo.type = float
 }
-
+Done
 41 {
     Tipo.type = string
 }
-
+Done
 42 {
     Tipo.type = char
 }

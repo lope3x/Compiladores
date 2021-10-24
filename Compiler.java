@@ -79,7 +79,8 @@ enum Type {
     INTEGER,
     REAL,
     CHARACTER,
-    STRING
+    STRING,
+    BOOLEAN
 }
 
 /**
@@ -276,6 +277,16 @@ class Symbol {
     }
 }
 
+class ExpressionReturn {
+    Type type;
+    int address;//TODO geração de código
+
+    ExpressionReturn(Type type, int address){
+        this.type = type;
+        this.address = address;
+    }
+}
+
 class SemanticAnalyzer {
     LexicalAnalyzer lexicalAnalyzer;
 
@@ -332,8 +343,31 @@ class SemanticAnalyzer {
         }
     }
 
+    public ExpressionReturn semanticAction9(Type expression1_1Type) {
+        return new ExpressionReturn(expression1_1Type, 0);
+    }
 
-
+    public ExpressionReturn semanticAction10(Type expression1_1Type, Type expression1_2Type, Token operator) throws CompilerError {
+        ExpressionReturn expressionReturn = new ExpressionReturn(Type.BOOLEAN, 0);
+        if((expression1_1Type == Type.INTEGER || expression1_1Type == Type.REAL) && expression1_2Type == Type.CHARACTER) {
+            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+        }
+        else if((expression1_2Type == Type.INTEGER || expression1_2Type == Type.REAL) && expression1_1Type == Type.CHARACTER) {
+            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+        }
+        else if(expression1_1Type == Type.STRING && expression1_2Type == Type.STRING){
+            if(operator != Token.EQUAL) {
+                throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+            }
+        }
+        else if(expression1_1Type == Type.STRING || expression1_2Type == Type.STRING) {
+            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+        }
+        else if(expression1_1Type == Type.BOOLEAN || expression1_2Type == Type.BOOLEAN) {
+            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+        }
+        return expressionReturn;
+    }
 }
 
 /**
@@ -440,19 +474,19 @@ class SyntaxAnalyzer {
         Type returnType;
         if(currentToken == Token.INT){
             matchToken(Token.INT);
-            returnType = Type.INTEGER;
+            returnType = Type.INTEGER;// Ação semantica 39
         }
         else if(currentToken == Token.FLOAT){
             matchToken(Token.FLOAT);
-            returnType = Type.REAL;
+            returnType = Type.REAL;// Ação semantica 40
         }
         else if(currentToken == Token.STRING){
             matchToken(Token.STRING);
-            returnType = Type.STRING;
+            returnType = Type.STRING;// Ação semantica 41
         }
         else {
             matchToken(Token.CHAR);
-            returnType = Type.CHARACTER;
+            returnType = Type.CHARACTER;// Ação semantica 42
         }
 
         return returnType;
@@ -538,19 +572,22 @@ class SyntaxAnalyzer {
      * Método que implementa o símbolo não terminal Expression
      * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
      */
-    private void expression() throws CompilerError {
-        expression1();
+    private ExpressionReturn expression() throws CompilerError {
+        ExpressionReturn expression1_1Return = expression1();
+        ExpressionReturn expressionData = semanticAnalyzer.semanticAction9(expression1_1Return.type); //Dados do Expresion atual
         if (isOnRelationalOperatorsFirst()){
-            relationalOperator();
-            expression1();
+            Token operator = relationalOperator();
+            ExpressionReturn expression1_2Return = expression1();
+            expressionData = semanticAnalyzer.semanticAction10(expression1_1Return.type, expression1_2Return.type, operator);
         }
+        return expressionData;
     }
 
     /**
      * Método que implementa o símbolo não terminal Expression1
      * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
      */
-    private void expression1() throws CompilerError {
+    private ExpressionReturn expression1() throws CompilerError {
         if(currentRegister.symbol.tokenType == Token.MINUS){
             matchToken(Token.MINUS);
         }
@@ -575,7 +612,7 @@ class SyntaxAnalyzer {
      * Método que implementa o símbolo não terminal Expression2
      * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
      */
-    private void expression2() throws CompilerError {
+    private ExpressionReturn expression2() throws CompilerError {
         expression3();
         Token currentToken = currentRegister.symbol.tokenType;
         while(currentToken == Token.MULTIPLICATION || currentToken == Token.AND
@@ -605,7 +642,7 @@ class SyntaxAnalyzer {
      * Método que implementa o símbolo não terminal Expression3
      * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
      */
-    private void expression3() throws CompilerError {
+    private ExpressionReturn expression3() throws CompilerError {
         while(currentRegister.symbol.tokenType == Token.NEGATION){
             matchToken(Token.NEGATION);
         }
@@ -616,7 +653,7 @@ class SyntaxAnalyzer {
      * Método que implementa o símbolo não terminal Expression4
      * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
      */
-    private void expression4() throws CompilerError {
+    private ExpressionReturn expression4() throws CompilerError {
         Token currentToken = currentRegister.symbol.tokenType;
         if(currentToken == Token.INT || currentToken == Token.FLOAT){
             if(currentToken == Token.INT){
@@ -639,7 +676,7 @@ class SyntaxAnalyzer {
      * Método que implementa o símbolo não terminal Expression5
      * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
      */
-    private void expression5() throws CompilerError {
+    private ExpressionReturn expression5() throws CompilerError {
         if(currentRegister.symbol.tokenType == Token.OPEN_PARENTESIS){
             matchToken(Token.OPEN_PARENTESIS);
             expression();
@@ -654,7 +691,7 @@ class SyntaxAnalyzer {
      * Método que implementa o símbolo não terminal Expression6
      * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
      */
-    private void expression6() throws CompilerError {
+    private ExpressionReturn expression6() throws CompilerError {
         if(currentRegister.symbol.tokenType == Token.CONST_VALUE) {
             matchToken(Token.CONST_VALUE);
         }
@@ -712,25 +749,31 @@ class SyntaxAnalyzer {
      * Método que implementa o símbolo não terminal Relational Operator
      * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
      */
-    private void relationalOperator() throws CompilerError {
+    private Token relationalOperator() throws CompilerError {
         Token currentToken = currentRegister.symbol.tokenType;
         if(currentToken == Token.EQUAL){
             matchToken(Token.EQUAL);
+            return Token.EQUAL;//Ação 11
         }
         else if(currentToken == Token.NOT_EQUAL){
             matchToken(Token.NOT_EQUAL);
+            return Token.NOT_EQUAL;//Ação 12
         }
         else if(currentToken == Token.LESSER){
             matchToken(Token.LESSER);
+            return Token.LESSER;//Ação 13
         }
         else if(currentToken == Token.GREATER){
             matchToken(Token.GREATER);
+            return Token.GREATER;//Ação 14
         }
         else if(currentToken == Token.LESSER_OR_EQUAL_THAN) {
             matchToken(Token.LESSER_OR_EQUAL_THAN);
+            return Token.LESSER_OR_EQUAL_THAN;//Ação 15
         }
         else {
             matchToken(Token.GREATER_OR_EQUAL_THAN);
+            return Token.GREATER_OR_EQUAL_THAN;//Ação 16
         }
     }
 
