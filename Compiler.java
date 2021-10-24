@@ -293,9 +293,9 @@ class Symbol {
 
 class ExpressionReturn {
     Type type;
-    int address;//TODO geração de código
+    long address;//TODO geração de código
 
-    ExpressionReturn(Type type, int address){
+    ExpressionReturn(Type type, long address){
         this.type = type;
         this.address = address;
     }

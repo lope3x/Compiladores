@@ -16,7 +16,7 @@ if(nome = "jose") {
 
 }
 
-while 5 = 5 {
+while 5 != 5 && 3 > 5 {
   percentual<-float(n)/MAXITER;
   writeln(percentual,": Ola' ",nome);
   n<-n+1;
