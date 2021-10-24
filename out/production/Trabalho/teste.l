@@ -1,1 +1,2 @@
-a
+const x = 'c';
+const x = 7;

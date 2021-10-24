@@ -3,8 +3,6 @@
  *  G07 - Bruno Duarte de Paula Assis (639985), Gabriel Lopes Ferreira(619148), Giovanni Carlos Guaceroni(636206)
  */
 
-import com.sun.deploy.security.ValidationState;
-
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -412,12 +410,75 @@ class SemanticAnalyzer {
         return expressionReturn;
     }
 
+    public ExpressionReturn semanticAction17(Type expression2_1Type, Type expression2_2Type, Token operator) throws CompilerError {
+        Type expressionType;
+        if(expression2_1Type == Type.STRING || expression2_1Type == Type.CHARACTER || expression2_2Type == Type.STRING || expression2_2Type == Type.CHARACTER) {
+            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+        }
+        if(expression2_1Type == Type.BOOLEAN && expression2_2Type == Type.BOOLEAN) {
+            expressionType = Type.BOOLEAN;
+            if(operator != Token.OR)
+                throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+        }
+        else if(expression2_1Type == Type.BOOLEAN || expression2_2Type == Type.BOOLEAN){
+            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+        }
+        else if(expression2_1Type == Type.REAL || expression2_2Type == Type.REAL) {
+            expressionType = Type.REAL;
+        }
+        else {
+            expressionType = Type.INTEGER;
+        }
+        if(operator == Token.OR) {
+            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+        }
+        return new ExpressionReturn(expressionType, 0);
+    }
+
+    public void semanticAction22(Type expression2_1Type, boolean isNegative) throws CompilerError {
+        if(expression2_1Type == Type.BOOLEAN && isNegative) {
+            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+        }
+    }
+
+    public ExpressionReturn semanticAction23(Type expression3_1Type, Type expression3_2Type, Token operator) throws CompilerError {
+        Type expressionType;
+        if(expression3_1Type == Type.STRING || expression3_1Type == Type.CHARACTER || expression3_2Type == Type.STRING || expression3_2Type == Type.CHARACTER) {
+            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+        }
+        if(expression3_1Type == Type.BOOLEAN && expression3_2Type == Type.BOOLEAN) {
+            expressionType = Type.BOOLEAN;
+            if(operator != Token.AND)
+                throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+        }
+        else if(expression3_1Type == Type.BOOLEAN || expression3_2Type == Type.BOOLEAN){
+            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+        }
+        else if(expression3_1Type == Type.REAL || expression3_2Type == Type.REAL) {
+            expressionType = Type.REAL;
+            if(operator == Token.DIV || operator == Token.MOD)
+                throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+        }
+        else {
+            expressionType = Type.INTEGER;
+        }
+        if(operator == Token.AND) {
+            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+        }
+        return new ExpressionReturn(expressionType, 0);
+    }
+    
+
     public ExpressionReturn semanticAction30(boolean expression3HasExclamationOperator, Type expression4Type) throws CompilerError {
         if (expression3HasExclamationOperator && (expression4Type != Type.BOOLEAN)){
             throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
         }
 
         return new ExpressionReturn(expression4Type, 0);
+    }
+
+    public ExpressionReturn semanticAction31(Type expression3_1Type) {
+        return new ExpressionReturn(expression3_1Type, 0);
     }
 
     public ExpressionReturn semanticAction32(Type expressionType) throws CompilerError {
@@ -432,6 +493,7 @@ class SemanticAnalyzer {
             throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
         }
     }
+    
 }
 
 /**
@@ -654,24 +716,31 @@ class SyntaxAnalyzer {
      * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
      */
     private ExpressionReturn expression1() throws CompilerError {
+        boolean isNegative = false;
         if(currentRegister.symbol.tokenType == Token.MINUS){
             matchToken(Token.MINUS);
+            isNegative = true;
         }
-        expression2();
+        ExpressionReturn expression2_1Return = expression2();
+        semanticAnalyzer.semanticAction22(expression2_1Return.type, isNegative);
+        ExpressionReturn expression1Data = expression2_1Return;
         Token currentToken = currentRegister.symbol.tokenType;
         while(currentToken == Token.MINUS || currentToken == Token.PLUS || currentToken == Token.OR){
-            if(currentToken == Token.MINUS){
+            Token operator = currentToken;
+            if(currentToken == Token.MINUS){ //semantic action 18
                 matchToken(Token.MINUS);
             }
-            else if(currentToken == Token.PLUS){
+            else if(currentToken == Token.PLUS){ //semantic action 19
                 matchToken(Token.PLUS);
             }
-            else {
+            else { //semantic action 20
                 matchToken(Token.OR);
             }
-            expression2();
+            ExpressionReturn expression2_2Return = expression2();
+            expression1Data = semanticAnalyzer.semanticAction17(expression2_1Return.type, expression2_2Return.type, operator);
             currentToken = currentRegister.symbol.tokenType;
         }
+        return expression1Data;
     }
 
     /**
@@ -679,29 +748,34 @@ class SyntaxAnalyzer {
      * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
      */
     private ExpressionReturn expression2() throws CompilerError {
-        expression3();
+        ExpressionReturn expression3_1Return = expression3();
+        semanticAnalyzer.semanticAction31(expression3_1Return.type);
         Token currentToken = currentRegister.symbol.tokenType;
+        ExpressionReturn expression2Data = expression3_1Return;
         while(currentToken == Token.MULTIPLICATION || currentToken == Token.AND
                 || currentToken == Token.DIVISION || currentToken == Token.DIV
                 || currentToken == Token.MOD ){
+            Token operator = currentToken;
             if(currentToken == Token.MULTIPLICATION){
-                matchToken(Token.MULTIPLICATION);
+                matchToken(Token.MULTIPLICATION); // Ação 24
             }
             else if(currentToken == Token.AND){
-                matchToken(Token.AND);
+                matchToken(Token.AND); // Ação 25
             }
             else if(currentToken == Token.DIVISION){
-                matchToken(Token.DIVISION);
+                matchToken(Token.DIVISION); // Ação 26
             }
             else if(currentToken == Token.DIV){
-                matchToken(Token.DIV);
+                matchToken(Token.DIV); // Ação 27
             }
             else {
-                matchToken(Token.MOD);
+                matchToken(Token.MOD); // Ação 28
             }
-            expression3();
+            ExpressionReturn expression3_2Return = expression3();
+            expression2Data = semanticAnalyzer.semanticAction23(expression3_1Return.type, expression3_2Return.type, operator);
             currentToken = currentRegister.symbol.tokenType;
         }
+        return expression2Data;
     }
 
     /**
