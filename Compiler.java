@@ -3,6 +3,8 @@
  *  G07 - Bruno Duarte de Paula Assis (639985), Gabriel Lopes Ferreira(619148), Giovanni Carlos Guaceroni(636206)
  */
 
+import com.sun.deploy.security.ValidationState;
+
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -67,7 +69,21 @@ enum ConstType {
     HEX,
     CHAR,
     FLOAT,
-    STRING
+    STRING;
+
+    public Type toType(){
+        switch (this) {
+            case INT:
+                return Type.INTEGER;
+            case HEX:
+            case CHAR:
+                return Type.CHARACTER;
+            case FLOAT:
+                return Type.REAL;
+            default:
+                return Type.STRING;
+        }
+    }
 }
 
 enum Class {
@@ -343,6 +359,33 @@ class SemanticAnalyzer {
         }
     }
 
+    public void semanticAction6(Type idType, Type expressionType) throws CompilerError {
+        if(idType != Type.STRING) {
+            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+        }
+        else if(expressionType != Type.INTEGER) {
+            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+        }
+    }
+
+    public void semanticAction7(boolean hasStringAccess, Type expressionType, Type idType) throws CompilerError {
+        if(hasStringAccess && (expressionType != Type.CHARACTER)) {
+            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+        }
+        else if(idType != Type.REAL && (expressionType != Type.INTEGER && expressionType != Type.REAL)) {
+            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+        }
+        else if(idType != expressionType) {
+            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+        }
+    }
+
+    public void semanticAction8(Type expressionType) throws CompilerError {
+        if(expressionType != Type.BOOLEAN) {
+            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+        }
+    }
+
     public ExpressionReturn semanticAction9(Type expression1_1Type) {
         return new ExpressionReturn(expression1_1Type, 0);
     }
@@ -367,6 +410,27 @@ class SemanticAnalyzer {
             throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
         }
         return expressionReturn;
+    }
+
+    public ExpressionReturn semanticAction30(boolean expression3HasExclamationOperator, Type expression4Type) throws CompilerError {
+        if (expression3HasExclamationOperator && (expression4Type != Type.BOOLEAN)){
+            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+        }
+
+        return new ExpressionReturn(expression4Type, 0);
+    }
+
+    public ExpressionReturn semanticAction32(Type expressionType) throws CompilerError {
+        if(expressionType != Type.INTEGER && expressionType != Type.REAL) {
+            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+        }
+        return new ExpressionReturn(expressionType, 0);
+    }
+
+    public void semanticAction37(Type expressionType) throws CompilerError {
+        if(expressionType != Type.INTEGER) {
+            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+        }
     }
 }
 
@@ -522,20 +586,22 @@ class SyntaxAnalyzer {
      * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
      */
     private void command() throws CompilerError {
+        boolean hasStringAccess = false;
         Token currentToken = currentRegister.symbol.tokenType;
         if(currentToken == Token.ID){
             LexicalRegister id = currentRegister;
             matchToken(Token.ID);
             semanticAnalyzer.semanticAction5(id);
-            boolean hasStringAccess = false;
             if (currentRegister.symbol.tokenType != Token.ATTRIBUTION) {
-                hasStringAccess = true;
                 matchToken(Token.LEFT_SQUARE_BRACKET);
-                expression();
+                ExpressionReturn expressionReturn = expression();
                 matchToken(Token.RIGHT_SQUARE_BRACKET);
+                semanticAnalyzer.semanticAction6(id.symbol.idType, expressionReturn.type);//Ação 6
+                hasStringAccess = true;
             }
             matchToken(Token.ATTRIBUTION);
-            expression();
+            ExpressionReturn expressionReturn = expression();
+            semanticAnalyzer.semanticAction7(hasStringAccess, expressionReturn.type, id.symbol.idType);//Ação 7
             matchToken(Token.SEMICOLON);
         }
         else if(currentToken == Token.WHILE){
@@ -643,10 +709,14 @@ class SyntaxAnalyzer {
      * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
      */
     private ExpressionReturn expression3() throws CompilerError {
+        boolean hasExclamationOperator = false;
         while(currentRegister.symbol.tokenType == Token.NEGATION){
             matchToken(Token.NEGATION);
+            hasExclamationOperator = true;
         }
-        expression4();
+        ExpressionReturn expression4Return = expression4();
+
+        return semanticAnalyzer.semanticAction30(hasExclamationOperator, expression4Return.type);
     }
 
     /**
@@ -654,6 +724,7 @@ class SyntaxAnalyzer {
      * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
      */
     private ExpressionReturn expression4() throws CompilerError {
+        ExpressionReturn expression4Data;
         Token currentToken = currentRegister.symbol.tokenType;
         if(currentToken == Token.INT || currentToken == Token.FLOAT){
             if(currentToken == Token.INT){
@@ -664,12 +735,15 @@ class SyntaxAnalyzer {
             }
 
             matchToken(Token.OPEN_PARENTESIS);
-            expression();
+            ExpressionReturn expressionReturn = expression();
+            expression4Data = semanticAnalyzer.semanticAction32(expressionReturn.type);
             matchToken(Token.CLOSE_PARENTESIS);
         }
         else {
-            expression5();
+            expression4Data =  expression5(); // Ação semantica 33
         }
+
+        return expression4Data;
     }
 
     /**
@@ -677,14 +751,18 @@ class SyntaxAnalyzer {
      * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
      */
     private ExpressionReturn expression5() throws CompilerError {
+        ExpressionReturn expression5Data;
         if(currentRegister.symbol.tokenType == Token.OPEN_PARENTESIS){
             matchToken(Token.OPEN_PARENTESIS);
-            expression();
+            expression5Data = expression();
             matchToken(Token.CLOSE_PARENTESIS);
+
         }
         else {
-            expression6();
+            expression5Data = expression6();
         }
+
+        return expression5Data;
     }
 
     /**
@@ -692,7 +770,9 @@ class SyntaxAnalyzer {
      * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
      */
     private ExpressionReturn expression6() throws CompilerError {
+        ExpressionReturn expression6Data;
         if(currentRegister.symbol.tokenType == Token.CONST_VALUE) {
+            expression6Data = new ExpressionReturn(currentRegister.constType.toType(), 0); // Ação 36
             matchToken(Token.CONST_VALUE);
         }
         else {
@@ -701,10 +781,15 @@ class SyntaxAnalyzer {
             semanticAnalyzer.semanticAction4(id);
             if(currentRegister.symbol.tokenType == Token.LEFT_SQUARE_BRACKET){
                 matchToken(Token.LEFT_SQUARE_BRACKET);
-                expression();
+                ExpressionReturn expressionReturn = expression();
+                semanticAnalyzer.semanticAction37(expressionReturn.type);
                 matchToken(Token.RIGHT_SQUARE_BRACKET);
             }
+
+            expression6Data = new ExpressionReturn(id.symbol.idType, 0); // Ação 38
         }
+
+        return expression6Data;
     }
 
     /**
@@ -713,7 +798,8 @@ class SyntaxAnalyzer {
      */
     private void repetition() throws CompilerError {
         matchToken(Token.WHILE);
-        expression();
+        ExpressionReturn expressionReturn = expression();
+        semanticAnalyzer.semanticAction8(expressionReturn.type);
         blockOrCommand();
     }
 
@@ -723,7 +809,8 @@ class SyntaxAnalyzer {
      */
     private void test() throws CompilerError {
         matchToken(Token.IF);
-        expression();
+        ExpressionReturn expressionReturn = expression();
+        semanticAnalyzer.semanticAction8(expressionReturn.type);
         blockOrCommand();
         if(currentRegister.symbol.tokenType == Token.ELSE) {
             matchToken(Token.ELSE);
