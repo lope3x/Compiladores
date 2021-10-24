@@ -311,21 +311,7 @@ class SemanticAnalyzer {
     public void semanticAction1(LexicalRegister id, LexicalRegister constValue) throws CompilerError {
         if (id.symbol.idClass == null) {
             id.symbol.idClass = Class.CONST;
-            switch (constValue.constType) {
-                case HEX:
-                case CHAR:
-                    id.symbol.idType = Type.CHARACTER;
-                    break;
-                case INT:
-                    id.symbol.idType = Type.INTEGER;
-                    break;
-                case FLOAT:
-                    id.symbol.idType = Type.REAL;
-                    break;
-                case STRING:
-                    id.symbol.idType = Type.STRING;
-                    break;
-            }
+            id.symbol.idType = constValue.constType.toType();
         }
         else {
             throw new CompilerError("identificador ja declarado ["+ id.symbol.lexeme +"].", lexicalAnalyzer.currentLine);
@@ -353,7 +339,7 @@ class SemanticAnalyzer {
             throw new CompilerError("identificador nao declarado ["+ id.symbol.lexeme +"].", lexicalAnalyzer.currentLine);
         }
         else if(id.symbol.idClass == Class.CONST) {
-            throw new CompilerError("classe de identificador incompatível ["+ id.symbol.lexeme +"].", lexicalAnalyzer.currentLine);
+            throw new CompilerError("classe de identificador incompativel ["+ id.symbol.lexeme +"].", lexicalAnalyzer.currentLine);
         }
     }
 
@@ -370,10 +356,10 @@ class SemanticAnalyzer {
         if(hasStringAccess && (expressionType != Type.CHARACTER)) {
             throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
         }
-        else if(idType != Type.REAL && (expressionType != Type.INTEGER && expressionType != Type.REAL)) {
+        else if(idType == Type.REAL && (expressionType != Type.INTEGER && expressionType != Type.REAL)) {
             throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
         }
-        else if(idType != expressionType) {
+        else if(!hasStringAccess && idType != expressionType) {
             throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
         }
     }
@@ -419,6 +405,7 @@ class SemanticAnalyzer {
             expressionType = Type.BOOLEAN;
             if(operator != Token.OR)
                 throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+            return new ExpressionReturn(expressionType, 0);
         }
         else if(expression2_1Type == Type.BOOLEAN || expression2_2Type == Type.BOOLEAN){
             throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
@@ -450,6 +437,7 @@ class SemanticAnalyzer {
             expressionType = Type.BOOLEAN;
             if(operator != Token.AND)
                 throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+            return new ExpressionReturn(expressionType, 0);
         }
         else if(expression3_1Type == Type.BOOLEAN || expression3_2Type == Type.BOOLEAN){
             throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
@@ -464,6 +452,9 @@ class SemanticAnalyzer {
         }
         if(operator == Token.AND) {
             throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+        }
+        if(operator == Token.DIVISION) {
+            expressionType = Type.REAL;
         }
         return new ExpressionReturn(expressionType, 0);
     }
@@ -481,11 +472,10 @@ class SemanticAnalyzer {
         return new ExpressionReturn(expression3_1Type, 0);
     }
 
-    public ExpressionReturn semanticAction32(Type expressionType) throws CompilerError {
+    public void semanticAction32(Type expressionType) throws CompilerError {
         if(expressionType != Type.INTEGER && expressionType != Type.REAL) {
             throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
         }
-        return new ExpressionReturn(expressionType, 0);
     }
 
     public void semanticAction37(Type expressionType) throws CompilerError {
@@ -801,16 +791,20 @@ class SyntaxAnalyzer {
         ExpressionReturn expression4Data;
         Token currentToken = currentRegister.symbol.tokenType;
         if(currentToken == Token.INT || currentToken == Token.FLOAT){
+            Type expression4Type;
             if(currentToken == Token.INT){
+                expression4Type = Type.INTEGER;//Ação 43
                 matchToken(Token.INT);
             }
             else {
+                expression4Type = Type.REAL;//Ação 44
                 matchToken(Token.FLOAT);
             }
 
+            expression4Data = new ExpressionReturn(expression4Type, 0);
             matchToken(Token.OPEN_PARENTESIS);
             ExpressionReturn expressionReturn = expression();
-            expression4Data = semanticAnalyzer.semanticAction32(expressionReturn.type);
+            semanticAnalyzer.semanticAction32(expressionReturn.type);
             matchToken(Token.CLOSE_PARENTESIS);
         }
         else {
@@ -851,16 +845,22 @@ class SyntaxAnalyzer {
         }
         else {
             LexicalRegister id = currentRegister;
+            Type expression6Type = id.symbol.idType;
             matchToken(Token.ID);
             semanticAnalyzer.semanticAction4(id);
-            if(currentRegister.symbol.tokenType == Token.LEFT_SQUARE_BRACKET){
+            boolean hasStringAccess = false;
+            if(currentRegister.symbol.tokenType == Token.LEFT_SQUARE_BRACKET) {
                 matchToken(Token.LEFT_SQUARE_BRACKET);
                 ExpressionReturn expressionReturn = expression();
                 semanticAnalyzer.semanticAction37(expressionReturn.type);
+                hasStringAccess = true; // Ação 37
+                expression6Type = Type.CHARACTER;
                 matchToken(Token.RIGHT_SQUARE_BRACKET);
             }
-
-            expression6Data = new ExpressionReturn(id.symbol.idType, 0); // Ação 38
+            if(!hasStringAccess) {
+                expression6Type = id.symbol.idType;
+            }
+            expression6Data = new ExpressionReturn(expression6Type, 0); // Ação 38
         }
 
         return expression6Data;
