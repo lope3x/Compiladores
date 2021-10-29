@@ -737,6 +737,7 @@ class SyntaxAnalyzer {
             LexicalRegister constValue =  currentRegister;
             matchToken(Token.CONST_VALUE);
             semanticAnalyzer.semanticAction1(id, constValue, isNegative);
+            codeGenerator.codeGenerate5(constValue, id, isNegative);
         }
 
     }

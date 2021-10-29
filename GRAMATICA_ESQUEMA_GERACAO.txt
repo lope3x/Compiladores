@@ -2,10 +2,12 @@ Start -> {Declaração; | Comando} EOF
 Bloco_ou_Comando -> Comando | Bloco
 Bloco -> "{"{Comando}"}"
 Tipo -> int  | float  | string  | char
-Declaração -> Tipo  Declaração_Init {, Declaração_Init} | const id = [-] const_value (5)
-Declaração_Init ->  id  [<- [-] const_value (5)] (6)
+Declaração -> Tipo  Declaração_Init {, Declaração_Init} | const id = [-] const_value (5) OK
+Declaração_Init ->  id  [<- [-] const_value (5)] (6) OK
 Escrita -> "("Expressão(3) {, Expressão(3)} ")"(4)
-Comando -> id  ["["Expressão"]"] <- Expressão  ; | Repetição | Teste | ; | readln"("id  ")" ; | (write (1) | writeln (2)) Escrita ;
+Comando -> id  ["["Expressão"]"] <- Expressão  ; |
+        Repetição | Teste | ; | readln"("id  ")" ; |
+        (write (1) | writeln (2)) Escrita ; OK
 Repetição -> while Expressão  Bloco_ou_Comando
 Teste -> if Expressão  Bloco_ou_Comando [else Bloco_ou_Comando]
 Operadores_Relacional -> =  | !=  | < | >  | <=  | >=
@@ -17,10 +19,11 @@ Expressão4 -> ( (int  | float ) "("Expressão ")" | Expressão5 )
 Expressão5 -> "(" Expressão  ")" | Expressão6
 Expressão6 -> const_value  | id  ["[" Expressão  "]"]
 
-
+Done
 (1) {
     escrita.isWriteLn = false
 }
+Done
 (2) {
     escrita.isWriteLn = true
 }
