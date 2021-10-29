@@ -2,8 +2,8 @@ Start -> {Declaração; | Comando} EOF
 Bloco_ou_Comando -> Comando | Bloco
 Bloco -> "{"{Comando}"}"
 Tipo -> int (39) | float (40) | string (41) | char (42)
-Declaração -> Tipo (3) Declaração_Init {, Declaração_Init} | const id = [-] const_value (1)
-Declaração_Init ->  id (2) [<- [-] const_value]
+Declaração -> Tipo (3) Declaração_Init {, Declaração_Init} | const id = [-(47)] const_value (1)
+Declaração_Init ->  id (2) [<- [-(45)] const_value (46) ]
 Escrita -> "("Expressão {, Expressão} ")"
 Comando -> id (5) ["["Expressão"]"(6)] <- Expressão (7) ; | Repetição | Teste | ; | readln"("id (5) ")" ; | (write| writeln) Escrita ;
 Repetição -> while Expressão (8) Bloco_ou_Comando
@@ -21,6 +21,8 @@ Expressão6 -> const_value (36) | id (4) ["[" Expressão (37) "]"] (38)
 Esquema de Tradução:
 Done
 1 {
+    se (const_value.type != inteiro && const_value.type != real) && Declaração.isNegative:
+        error
     se id.class == null:
         id.class = CONST, id.type = const_value.type
     senão:
@@ -148,7 +150,7 @@ Expressão1 -> [- (21)] Expressão2_1 (22) {(- (18) | + (19) | || (20) )  Expres
 }
 
 22 {
-    se Expressão2_1.type == boolean && Expressão1.isNegative:
+    se (Expressão2_1.type != inteiro && Expressão2_1 != real) && Expressão1.isNegative:
         error
     Expressão1.type = Expressão2_1.type
 }
@@ -264,4 +266,20 @@ Done
 
 44 {
    expression4.type = float
+}
+Declaração_Init ->  id (2) [<- [-(45)] const_value (46) ]
+
+45 {
+   Declaração_Init.isNegative = true
+}
+
+46 {
+   se (Declaração_Init.type != inteiro && Declaração_Init.type != real) && Declaração_Init.isNegative:
+        error
+   se Declaração_Init.type != const_value.type:
+        error
+}
+
+47 {
+    Declaração.isNegative = true
 }

@@ -1,0 +1,42 @@
+;; Código para printar o valor que está em EAX, o valor é um inteiro
+
+mov eax, 1
+mov ebx, 100
+add eax, ebx
+
+mov rsi, M+0; primeiro temp
+mov rcx, 0 ;contador pilha
+mov rdi, 0 ;tam. string convertido
+cmp eax, 0 ;verifica sinal
+jge Rot0 ;salta se número positivo
+mov bl, '-' ;senão, escreve sinal –
+mov [rsi], bl
+add rsi, 1 ;incrementa índice
+add rdi, 1 ;incrementa tamanho
+neg eax ;toma módulo do número
+Rot0:
+mov ebx, 10 ;divisor
+Rot1:
+add rcx, 1 ;incrementa contador
+cdq ;estende edx:eax p/ div.
+idiv ebx ;divide edx;eax por ebx
+push dx ;empilha valor do resto
+cmp eax, 0 ;verifica se quoc. é 0
+jne Rot1 ;se não é 0, continua
+add rdi,rcx ;atualiza tam. string
+;agora, desemp. os valores e escreve o string
+Rot2:
+pop dx ;desempilha valor
+add dl, '0' ;transforma em caractere
+mov [rsi], dl ;escreve caractere
+add rsi, 1 ;incrementa base
+sub rcx, 1 ;decrementa contador
+cmp rcx, 0 ;verifica pilha vazia
+jne Rot2 ;se não pilha vazia, loop
+
+; Interrupção de saida
+mov rsi, M ;ou buffer.end
+mov rdx, rdi ;ou buffer.tam
+mov rax, 1 ;chamada para saída
+mov rdi, 1 ;saída para tela
+syscall

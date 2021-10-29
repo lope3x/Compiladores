@@ -1,0 +1,258 @@
+Start -> {Declaração; | Comando} EOF
+Bloco_ou_Comando -> Comando | Bloco
+Bloco -> "{"{Comando}"}"
+Tipo -> int  | float  | string  | char
+Declaração -> Tipo  Declaração_Init {, Declaração_Init} | const id = [-] const_value (5)
+Declaração_Init ->  id  [<- [-] const_value (5)] (6)
+Escrita -> "("Expressão(3) {, Expressão(3)} ")"(4)
+Comando -> id  ["["Expressão"]"] <- Expressão  ; | Repetição | Teste | ; | readln"("id  ")" ; | (write (1) | writeln (2)) Escrita ;
+Repetição -> while Expressão  Bloco_ou_Comando
+Teste -> if Expressão  Bloco_ou_Comando [else Bloco_ou_Comando]
+Operadores_Relacional -> =  | !=  | < | >  | <=  | >=
+Expressão -> Expressão1_1  [Operadores_Relacional Expressão1_2 ]
+Expressão1 -> [- ] Expressão2_1  {(-  | +  | ||  )  Expressão2_2 }
+Expressão2 -> Expressão3_1 {(* | && | / | div | mod) Expressão3_2 }
+Expressão3 -> {!} Expressão4
+Expressão4 -> ( (int  | float ) "("Expressão ")" | Expressão5 )
+Expressão5 -> "(" Expressão  ")" | Expressão6
+Expressão6 -> const_value  | id  ["[" Expressão  "]"]
+
+
+(1) {
+    escrita.isWriteLn = false
+}
+(2) {
+    escrita.isWriteLn = true
+}
+//Lembrar de trocar rotulos do print para rotulos gerados em tempo de compilação
+(3) {
+    //print
+    se expressão.type == String:
+        mov rsi, M+expressão.end ;
+        mov rdx, expressão.size ;buffer end
+        mov rax, 1 ;chamada para saída
+        mov rdi, 1 ;saída para tela
+        syscall; chamada do sistema
+    senão se expressão.type == Inteiro:
+        novoTemp = getNewTemporaryAddress() //java
+        mov eax, [qword + expressão.end]
+        mov rsi, M+novoTemp; primeiro temp
+        mov rcx, 0 ;contador pilha
+        mov rdi, 0 ;tam. string convertido
+        cmp eax, 0 ;verifica sinal
+        jge Rot0 ;salta se número positivo
+        mov bl, '-' ;senão, escreve sinal –
+        mov [rsi], bl
+        add rsi, 1 ;incrementa índice
+        add rdi, 1 ;incrementa tamanho
+        neg eax ;toma módulo do número
+        Rot0:
+        mov ebx, 10 ;divisor
+        Rot1:
+        add rcx, 1 ;incrementa contador
+        cdq ;estende edx:eax p/ div.
+        idiv ebx ;divide edx;eax por ebx
+        push dx ;empilha valor do resto
+        cmp eax, 0 ;verifica se quoc. é 0
+        jne Rot1 ;se não é 0, continua
+        add rdi,rcx ;atualiza tam. string
+        ;agora, desemp. os valores e escreve o string
+        Rot2:
+        pop dx ;desempilha valor
+        add dl, '0' ;transforma em caractere
+        mov [rsi], dl ;escreve caractere
+        add rsi, 1 ;incrementa base
+        sub rcx, 1 ;decrementa contador
+        cmp rcx, 0 ;verifica pilha vazia
+        jne Rot2 ;se não pilha vazia, loop
+
+        ; Interrupção de saida
+        mov rsi, M+getNewTemporaryAddress ;ou buffer.end
+        mov rdx, rdi ;ou buffer.tam
+        mov rax, 1 ;chamada para saída
+        mov rdi, 1 ;saída para tela
+        syscall
+    senão se expressão.type == float:
+        novoTemp = getNewTemporaryAddress() //java
+        movss xmm0, [qword M+expressão.end] ;real a ser impresso
+        mov rsi, M+novoTemp;end. temporário
+        mov rcx, 0 ;contador pilha
+        mov rdi, 6 ;precisao 6 casas compart
+        mov rbx, 10 ;divisor
+        cvtsi2ss xmm2, rbx ;divisor real
+        subss xmm1, xmm1 ;zera registrador
+        comiss xmm0, xmm1 ;verifica sinal
+        jae Rot0 ;salta se número positivo
+        mov dl, '-' ;senão, escreve sinal –
+        mov [rsi], dl
+        mov rdx, -1 ;Carrega -1 em RDX
+        cvtsi2ss xmm1, rdx ;Converte para real
+        mulss xmm0, xmm1 ;Toma módulo
+        add rsi, 1 ;incrementa índice
+        Rot0:
+        roundss xmm1, xmm0, 0b0011 ;parte inteira xmm1
+        subss xmm0, xmm1 ;parte frac xmm0
+        cvtss2si rax, xmm1 ;convertido para int
+        ;converte parte inteira que está em rax
+        Rot1:
+        add rcx, 1 ;incrementa contador
+        cdq ;estende edx:eax p/ div.
+        idiv ebx ;divide edx;eax por ebx
+        push dx ;empilha valor do resto
+        cmp eax, 0 ;verifica se quoc. é 0
+        jne Rot1 ;se não é 0, continua
+        sub rdi, rcx ;decrementa precisao
+        ;agora, desemp valores e escreve parte int
+        Rot2:
+        pop dx ;desempilha valor
+        add dl, '0' ;transforma em caractere
+        mov [rsi], dl ;escreve caractere
+        add rsi, 1 ;incrementa base
+        sub rcx, 1 ;decrementa contador
+        cmp rcx, 0 ;verifica pilha vazia
+        jne Rot2 ;se não pilha vazia, loop
+        mov dl, '.' ;escreve ponto decimal
+        mov [rsi], dl
+        add rsi, 1 ;incrementa base
+        ;converte parte fracionaria que está em xmm0
+        Rot3:
+        cmp rdi, 0 ;verifica precisao
+        jle Rot4 ;terminou precisao ?
+        mulss xmm0,xmm2 ;desloca para esquerda
+        roundss xmm1,xmm0,0b0011 ;parte inteira xmm1
+        subss xmm0,xmm1 ;atualiza xmm0
+        cvtss2si rdx, xmm1 ;convertido para int
+        add dl, '0' ;transforma em caractere
+        mov [rsi], dl ;escreve caractere
+        add rsi, 1 ;incrementa base
+        sub rdi, 1 ;decrementa precisao
+        jmp Rot3
+        ; impressão
+        Rot4:
+        mov dl, 0 ;fim string, opcional
+        mov [rsi], dl ;escreve caractere
+        mov rdx, rsi ;calc tam str convertido
+        mov rbx, M+novoTemp
+        sub rdx, rbx ;tam=rsi-M-buffer.end
+        mov rsi, M+novoTemp; endereço do buffer
+
+        ; Interrupção de saida
+        mov rax, 1 ;chamada para saída
+        mov rdi, 1 ;saída para tela
+        syscall
+
+    senão se expressão.type == Character:
+        mov rsi, M+expressão.end ;
+        mov rdx, 1 ;buffer end
+        mov rax, 1 ;chamada para saída
+        mov rdi, 1 ;saída para tela
+        syscall; chamada do sistema
+
+}
+(4) {
+    //imprimir quebra de linha
+    se escrita.isWriteLn:
+        section .data
+        db 10
+        section .text
+        mov rsi, M+dataCount ; pega posição do \n
+        mov rdx, 1 ;1 byte apenas
+        mov rax, 1 ;chamada para saída
+        mov rdi, 1 ;saída para tela
+        syscall; chamada do sistema
+        dataCount+=1; //java
+}
+Declaração_Init ->  id [<- [-] const_value (5)] (6)
+Colchete if else se tiver init é db se não é resb
+
+
+string x <- "nome"; // DB direto  x.size = "nome".size
+int y <-5;
+db "nome",0
+dd 5
+x <- "escola";// o que ta embaixo
+//Atribuição de string a um id
+mov rdi, M+x.end
+mov rsi, M+exp.end
+Rot1:
+mov al, [rsi]
+mov [rdi], al
+add rdi, 1
+add rsi, 1
+cmp al, 0
+jne Rot1
+
+//Adicionar 0 no lugar do \n
+readln(x);
+mov rsi, M+x.end
+mov rdx, x.size ;tamanho do buffer
+mov rax, 0 ;chamada para leitura
+mov rdi, 0 ;leitura do teclado
+syscall
+
+Declaração_Init ->  id  [<- [-] const_value (5)]
+(5) {
+    se const_value.type == String:
+        id.address = dataCount//java
+        id.size = 255
+        section .data:
+        db const_value.lex, 0
+        resb 255 - const_value.size
+        section .text:
+        dataCount+=256//java
+    senão se const_value.type == Inteiro:
+        id.address = dataCount; //java
+        id.size = constValue.size; //java
+        section .data:
+        dd const_value.lex
+        section .text:
+        dataCount += 4 //java
+    senão se const_value.type == float:
+        id.address = dataCount; //java
+        id.size = constValue.size; //java
+        section .data:
+        se Declaração_Init.isNegative://java
+        dd -const_value.lex
+        senão://java
+        dd const_value.lex
+        section .text:
+        dataCount+=const_value.size//java
+    senão se const_value.type == Character:
+        id.address = dataCount; //java
+        id.size = 1; //java
+        section .data:
+        db 'const_value.lex'
+        section .text:
+        dataCount+= 1//java
+}
+
+(6) {
+    se id.type == String:
+         id.address = dataCount//java
+         id.size = 255
+         section .data
+         resb 256
+         section .text
+         dataCount+=256//java
+     senão se id.type == Inteiro:
+         id.address = dataCount; //java
+         id.size = constValue.size; //java
+         section .data
+         resd 1
+         section .text
+         dataCount += 4 //java
+     senão se id.type == float:
+         id.address = dataCount; //java
+         id.size = constValue.size; //java
+         section .data
+         resd 1
+         section .text
+         dataCount+=4//java
+     senão se id.type == Character:
+         id.address = dataCount; //java
+         id.size = 1; //java
+         section .data
+         resb 1
+         section .text
+         dataCount+= 1//java
+}

@@ -3,8 +3,10 @@
  *  G07 - Bruno Duarte de Paula Assis (639985), Gabriel Lopes Ferreira(619148), Giovanni Carlos Guaceroni(636206)
  */
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -48,13 +50,13 @@ enum Token {
     LEFT_SQUARE_BRACKET("["),
     RIGHT_SQUARE_BRACKET("]"),
     CONST("const"),
-    EOF(null),
-    CONST_VALUE(null),
-    ID(null);
+        EOF(null),
+                CONST_VALUE(null),
+                ID(null);
 
-    public final String name;
+        public final String name;
 
-    Token(String name) {
+        Token(String name) {
         this.name = name;
     }
 }
@@ -267,6 +269,8 @@ class Symbol {
     String lexeme;
     Class idClass; // Somente tokens ID terão esse valor setado
     Type idType; // Somente tokens ID terão esse valor setado
+    long address;
+    int size;
 
     /**
      * Construtor da classe.
@@ -283,6 +287,8 @@ class Symbol {
                 ", lexeme='" + lexeme + '\'' +
                 ", idClass=" + idClass +
                 ", idType=" + idType +
+                ", address=" + address +
+                ", size=" + size +
                 '}';
     }
 
@@ -291,9 +297,165 @@ class Symbol {
     }
 }
 
+class CodeGenerator {
+    String generatedCode = "";
+    long dataCount = 0x10000;
+    private int temporaryCount = 0;
+    private int labelCount = 0;
+
+    CodeGenerator() {
+        generatedCode+="section .data\n" +
+                "M:\n" +
+                "resb 10000h; Reserva para Temporarios\n" +
+                "section .text\n" +
+                "global _start\n" +
+                "_start:\n";
+    }
+
+    public void printCode() {
+        generatedCode+=generateEndOfCode();
+        File output = new File("arq.asm");
+//        System.out.println(generatedCode);
+        try {
+            if(!output.exists())
+                output.createNewFile();
+            PrintWriter out = new PrintWriter(output);
+            out.println(generatedCode);
+            out.close();
+        }
+        catch (IOException ioException){
+            ioException.printStackTrace();
+        }
+
+
+    }
+
+    private String generateEndOfCode() {
+        return "mov rax, 60\n" +
+                "mov rdi, 0\n" +
+                "syscall\n";
+    }
+
+    public String getNewLabel() {
+        String newLabel = "Label"+labelCount;
+        labelCount++;
+        return newLabel;
+    }
+
+    public long getNewTemporaryAddress(int sizeOfTemporary) {
+        long address = temporaryCount;
+        temporaryCount+=sizeOfTemporary;
+        return address;
+    }
+
+    public void resetTemporaryCount() {
+        temporaryCount = 0;
+    }
+
+    public void codeGenerate3(ExpressionReturn expressionReturn) {
+        switch (expressionReturn.type){
+            case STRING:
+                break;
+            case REAL:
+                break;
+            case BOOLEAN:
+            case INTEGER:
+                break;
+            case CHARACTER:
+                break;
+        }
+    }
+
+    public void codeGenerate4(boolean isWriteLn) {
+        if (isWriteLn) {
+            generatedCode += "section .data\n" +
+                    "db 10\n" +
+                    "section .text\n" +
+                    "mov rsi, M+" +
+                    dataCount + "\n"+
+                    "mov rdx, 1 ;1 byte apenas\n" +
+                    "mov rax, 1 ;chamada para saida\n" +
+                    "mov rdi, 1 ;saida para tela\n" +
+                    "syscall; chamada do sistema\n";
+            dataCount += 1; //java
+        }
+    }
+
+    public void codeGenerate5(LexicalRegister constvalue, LexicalRegister id, boolean isNegative) {
+        Type constType = constvalue.constType.toType();
+
+        switch (constType){
+            case STRING:
+                id.symbol.address = dataCount;
+                id.symbol.size = 255;
+                int unUsedStringSpace = 255 - constvalue.size;
+                generatedCode+="section .data\n"+
+                        "db "+constvalue.symbol.lexeme+", 0\n"+
+                        "resb "+unUsedStringSpace+"\n"+
+                        "section .text\n";
+                dataCount+=256;
+                break;
+            case BOOLEAN:
+            case INTEGER:
+            case REAL:
+                id.symbol.address = dataCount;
+                id.symbol.size = 4;
+                String lexeme= "";
+                if(isNegative)
+                    lexeme +="-"+constvalue.symbol.lexeme;
+                else
+                    lexeme = constvalue.symbol.lexeme;
+                generatedCode+="section .data\n"+
+                        "dd "+lexeme+"\n"+
+                        "section .text\n";
+                dataCount+=4;
+                break;
+            case CHARACTER:
+                id.symbol.address = dataCount;
+                id.symbol.size = 1;
+                generatedCode+="section .data\n"+
+                        "db "+constvalue.symbol.lexeme+"\n"+
+                        "section .text\n";
+                break;
+        }
+    }
+
+    public void codeGenerate6(LexicalRegister id) {
+        switch (id.symbol.idType){
+            case STRING:
+                id.symbol.address = dataCount;
+                id.symbol.size = 255;
+                generatedCode += "section .data\n"+
+                                "resb 256\n"+
+                                "section .text\n";
+                dataCount+=256;
+                break;
+            case BOOLEAN:
+            case INTEGER:
+            case REAL:
+                id.symbol.address = dataCount;
+                id.symbol.size = 4;
+                generatedCode += "section .data\n"+
+                        "resd 1\n"+
+                        "section .text\n";
+                dataCount+=4;
+                break;
+            case CHARACTER:
+                id.symbol.address = dataCount;
+                id.symbol.size = 1;
+                generatedCode += "section .data\n"+
+                        "resb 1\n"+
+                        "section .text\n";
+                dataCount+=1;
+                break;
+        }
+    }
+}
+
 class ExpressionReturn {
     Type type;
     long address;//TODO geração de código
+    int size;
 
     ExpressionReturn(Type type, long address){
         this.type = type;
@@ -302,19 +464,21 @@ class ExpressionReturn {
 }
 
 class SemanticAnalyzer {
-    LexicalAnalyzer lexicalAnalyzer;
+    int lastTokenReadLine;//Usado pelo semântico para imprimir o error
 
-    public SemanticAnalyzer(LexicalAnalyzer lexicalAnalyzer) {
-        this.lexicalAnalyzer = lexicalAnalyzer;
+    SemanticAnalyzer() {
     }
-
-    public void semanticAction1(LexicalRegister id, LexicalRegister constValue) throws CompilerError {
+    public void semanticAction1(LexicalRegister id, LexicalRegister constValue, boolean isNegative) throws CompilerError {
+        Type constValueType = constValue.constType.toType();
+        if((constValueType !=Type.INTEGER && constValueType != Type.REAL) && isNegative){
+            throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
+        }
         if (id.symbol.idClass == null) {
             id.symbol.idClass = Class.CONST;
-            id.symbol.idType = constValue.constType.toType();
+            id.symbol.idType = constValueType;
         }
         else {
-            throw new CompilerError("identificador ja declarado ["+ id.symbol.lexeme +"].", lexicalAnalyzer.currentLine);
+            throw new CompilerError("identificador ja declarado ["+ id.symbol.lexeme +"].", lastTokenReadLine);
         }
     }
 
@@ -324,49 +488,49 @@ class SemanticAnalyzer {
             id.symbol.idType = declarationInitType;
         }
         else {
-            throw new CompilerError("identificador ja declarado ["+ id.symbol.lexeme +"].", lexicalAnalyzer.currentLine);
+            throw new CompilerError("identificador ja declarado ["+ id.symbol.lexeme +"].", lastTokenReadLine);
         }
     }
 
     public void semanticAction4(LexicalRegister id) throws CompilerError {
         if(id.symbol.idClass == null) {
-            throw new CompilerError("identificador nao declarado ["+ id.symbol.lexeme +"].", lexicalAnalyzer.currentLine);
+            throw new CompilerError("identificador nao declarado ["+ id.symbol.lexeme +"].", lastTokenReadLine);
         }
     }
 
     public void semanticAction5(LexicalRegister id) throws CompilerError {
         if(id.symbol.idClass == null) {
-            throw new CompilerError("identificador nao declarado ["+ id.symbol.lexeme +"].", lexicalAnalyzer.currentLine);
+            throw new CompilerError("identificador nao declarado ["+ id.symbol.lexeme +"].", lastTokenReadLine);
         }
         else if(id.symbol.idClass == Class.CONST) {
-            throw new CompilerError("classe de identificador incompativel ["+ id.symbol.lexeme +"].", lexicalAnalyzer.currentLine);
+            throw new CompilerError("classe de identificador incompativel ["+ id.symbol.lexeme +"].", lastTokenReadLine);
         }
     }
 
     public void semanticAction6(Type idType, Type expressionType) throws CompilerError {
         if(idType != Type.STRING) {
-            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+            throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
         else if(expressionType != Type.INTEGER) {
-            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+            throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
     }
 
     public void semanticAction7(boolean hasStringAccess, Type expressionType, Type idType) throws CompilerError {
         if(hasStringAccess && (expressionType != Type.CHARACTER)) {
-            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+            throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
         else if(idType == Type.REAL && (expressionType != Type.INTEGER && expressionType != Type.REAL)) {
-            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+            throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
         else if(!hasStringAccess && idType != expressionType) {
-            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+            throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
     }
 
     public void semanticAction8(Type expressionType) throws CompilerError {
         if(expressionType != Type.BOOLEAN) {
-            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+            throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
     }
 
@@ -377,21 +541,21 @@ class SemanticAnalyzer {
     public ExpressionReturn semanticAction10(Type expression1_1Type, Type expression1_2Type, Token operator) throws CompilerError {
         ExpressionReturn expressionReturn = new ExpressionReturn(Type.BOOLEAN, 0);
         if((expression1_1Type == Type.INTEGER || expression1_1Type == Type.REAL) && expression1_2Type == Type.CHARACTER) {
-            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+            throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
         else if((expression1_2Type == Type.INTEGER || expression1_2Type == Type.REAL) && expression1_1Type == Type.CHARACTER) {
-            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+            throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
         else if(expression1_1Type == Type.STRING && expression1_2Type == Type.STRING){
             if(operator != Token.EQUAL) {
-                throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+                throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
             }
         }
         else if(expression1_1Type == Type.STRING || expression1_2Type == Type.STRING) {
-            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+            throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
         else if(expression1_1Type == Type.BOOLEAN || expression1_2Type == Type.BOOLEAN) {
-            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+            throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
         return expressionReturn;
     }
@@ -399,16 +563,16 @@ class SemanticAnalyzer {
     public ExpressionReturn semanticAction17(Type expression2_1Type, Type expression2_2Type, Token operator) throws CompilerError {
         Type expressionType;
         if(expression2_1Type == Type.STRING || expression2_1Type == Type.CHARACTER || expression2_2Type == Type.STRING || expression2_2Type == Type.CHARACTER) {
-            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+            throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
         if(expression2_1Type == Type.BOOLEAN && expression2_2Type == Type.BOOLEAN) {
             expressionType = Type.BOOLEAN;
             if(operator != Token.OR)
-                throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+                throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
             return new ExpressionReturn(expressionType, 0);
         }
         else if(expression2_1Type == Type.BOOLEAN || expression2_2Type == Type.BOOLEAN){
-            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+            throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
         else if(expression2_1Type == Type.REAL || expression2_2Type == Type.REAL) {
             expressionType = Type.REAL;
@@ -417,41 +581,41 @@ class SemanticAnalyzer {
             expressionType = Type.INTEGER;
         }
         if(operator == Token.OR) {
-            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+            throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
         return new ExpressionReturn(expressionType, 0);
     }
 
     public void semanticAction22(Type expression2_1Type, boolean isNegative) throws CompilerError {
-        if(expression2_1Type == Type.BOOLEAN && isNegative) {
-            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+        if((expression2_1Type != Type.INTEGER && expression2_1Type != Type.REAL) && isNegative) {
+            throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
     }
 
     public ExpressionReturn semanticAction23(Type expression3_1Type, Type expression3_2Type, Token operator) throws CompilerError {
         Type expressionType;
         if(expression3_1Type == Type.STRING || expression3_1Type == Type.CHARACTER || expression3_2Type == Type.STRING || expression3_2Type == Type.CHARACTER) {
-            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+            throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
         if(expression3_1Type == Type.BOOLEAN && expression3_2Type == Type.BOOLEAN) {
             expressionType = Type.BOOLEAN;
             if(operator != Token.AND)
-                throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+                throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
             return new ExpressionReturn(expressionType, 0);
         }
         else if(expression3_1Type == Type.BOOLEAN || expression3_2Type == Type.BOOLEAN){
-            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+            throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
         else if(expression3_1Type == Type.REAL || expression3_2Type == Type.REAL) {
             expressionType = Type.REAL;
             if(operator == Token.DIV || operator == Token.MOD)
-                throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+                throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
         else {
             expressionType = Type.INTEGER;
         }
         if(operator == Token.AND) {
-            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+            throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
         if(operator == Token.DIVISION) {
             expressionType = Type.REAL;
@@ -462,7 +626,7 @@ class SemanticAnalyzer {
 
     public ExpressionReturn semanticAction30(boolean expression3HasExclamationOperator, Type expression4Type) throws CompilerError {
         if (expression3HasExclamationOperator && (expression4Type != Type.BOOLEAN)){
-            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+            throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
 
         return new ExpressionReturn(expression4Type, 0);
@@ -474,16 +638,24 @@ class SemanticAnalyzer {
 
     public void semanticAction32(Type expressionType) throws CompilerError {
         if(expressionType != Type.INTEGER && expressionType != Type.REAL) {
-            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+            throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
     }
 
     public void semanticAction37(Type expressionType) throws CompilerError {
         if(expressionType != Type.INTEGER) {
-            throw new CompilerError("tipos incompativeis.", lexicalAnalyzer.currentLine);
+            throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
     }
-    
+
+    public void semanticAction46(Type declarationInitType, Type constValueType, boolean isNegative) throws CompilerError {
+        if((declarationInitType != Type.INTEGER && declarationInitType != Type.REAL) && isNegative) {
+            throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
+        }
+        if(declarationInitType != constValueType) {
+            throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
+        }
+    }
 }
 
 /**
@@ -493,6 +665,7 @@ class SyntaxAnalyzer {
     LexicalAnalyzer lexicalAnalyzer;
     SemanticAnalyzer semanticAnalyzer;
     LexicalRegister currentRegister;
+    CodeGenerator codeGenerator;
 
     /**
      * Construtor do analisador sintático, recebe como parâmetro o analisador léxico
@@ -500,7 +673,8 @@ class SyntaxAnalyzer {
      */
     public SyntaxAnalyzer(LexicalAnalyzer lexicalAnalyzer) {
         this.lexicalAnalyzer = lexicalAnalyzer;
-        this.semanticAnalyzer = new SemanticAnalyzer(lexicalAnalyzer);
+        this.semanticAnalyzer = new SemanticAnalyzer();
+        this.codeGenerator = new CodeGenerator();
     }
 
     /**
@@ -511,6 +685,7 @@ class SyntaxAnalyzer {
         currentRegister = lexicalAnalyzer.getNextToken();
         start();
         System.out.println(lexicalAnalyzer.currentLine + " linhas compiladas.");
+        codeGenerator.printCode(); // Comentar essa linha quando for enviar o semântico no verde.
     }
 
     /**
@@ -550,16 +725,18 @@ class SyntaxAnalyzer {
             }
         }
         else {
+            boolean isNegative = false;
             matchToken(Token.CONST);
             LexicalRegister id = currentRegister;
             matchToken(Token.ID);
             matchToken(Token.EQUAL);
             if(currentRegister.symbol.tokenType == Token.MINUS){
                 matchToken(Token.MINUS);
+                isNegative = true; // ação 47
             }
             LexicalRegister constValue =  currentRegister;
             matchToken(Token.CONST_VALUE);
-            semanticAnalyzer.semanticAction1(id, constValue);
+            semanticAnalyzer.semanticAction1(id, constValue, isNegative);
         }
 
     }
@@ -569,6 +746,7 @@ class SyntaxAnalyzer {
      * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
      */
     private void declarationInit(Type declarationInitType) throws CompilerError {
+        boolean isNegative = false;
         LexicalRegister id = currentRegister;
         matchToken(Token.ID);
         semanticAnalyzer.semanticAction2(id, declarationInitType);
@@ -576,8 +754,15 @@ class SyntaxAnalyzer {
             matchToken(Token.ATTRIBUTION);
             if(currentRegister.symbol.tokenType == Token.MINUS){
                 matchToken(Token.MINUS);
+                isNegative = true; // ação 45
             }
+            LexicalRegister constValue = currentRegister;
             matchToken(Token.CONST_VALUE);
+            semanticAnalyzer.semanticAction46(declarationInitType, constValue.constType.toType(), isNegative);
+            codeGenerator.codeGenerate5(constValue, id, isNegative);
+        }
+        else {
+            codeGenerator.codeGenerate6(id);
         }
     }
 
@@ -675,13 +860,15 @@ class SyntaxAnalyzer {
             matchToken(Token.SEMICOLON);
         }
         else {
+            boolean isWriteLn = false;
             if(currentToken == Token.WRITE){
                 matchToken(Token.WRITE);
             }
             else {
                 matchToken(Token.WRITE_LINE);
+                isWriteLn = true;
             }
-            write();
+            write(isWriteLn);
             matchToken(Token.SEMICOLON);
         }
     }
@@ -896,14 +1083,17 @@ class SyntaxAnalyzer {
      * Método que implementa o símbolo não terminal Write
      * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
      */
-    private void write() throws CompilerError {
+    private void write(boolean isWriteLn) throws CompilerError {
         matchToken(Token.OPEN_PARENTESIS);
-        expression();
+        ExpressionReturn expressionReturn = expression();
+        codeGenerator.codeGenerate3(expressionReturn);
         while(currentRegister.symbol.tokenType == Token.COMMA) {
             matchToken(Token.COMMA);
-            expression();
+            expressionReturn = expression();
+            codeGenerator.codeGenerate3(expressionReturn);
         }
         matchToken(Token.CLOSE_PARENTESIS);
+        codeGenerator.codeGenerate4(isWriteLn);
     }
 
     /**
@@ -1000,6 +1190,7 @@ class SyntaxAnalyzer {
      */
     private void matchToken(Token expectedToken) throws CompilerError {
         if(currentRegister.symbol.tokenType == expectedToken) {
+            semanticAnalyzer.lastTokenReadLine = lexicalAnalyzer.currentLine;
             currentRegister = lexicalAnalyzer.getNextToken();
         }
         else if(currentRegister.symbol.tokenType == Token.EOF) {
@@ -1257,7 +1448,7 @@ class LexicalAnalyzer {
                     if(currentCharacter == '\"') {
                         currentState = 4;
                         constType = ConstType.STRING;
-                        constSize = currentLexeme.length();
+                        constSize = currentLexeme.length() - 1;
                     } else if(currentCharacter == '\n' || currentCharacter == '\r') {
                         throw new CompilerError("lexema nao identificado [" + currentLexeme + "].", currentLine);
                     }
@@ -1361,6 +1552,7 @@ class LexicalAnalyzer {
         }
         else { //se é constante
             symbol = new Symbol(Token.CONST_VALUE, currentLexeme);
+            symbol.size = constSize;
         }
         return new LexicalRegister(result, symbol, constType, constSize);
     }
