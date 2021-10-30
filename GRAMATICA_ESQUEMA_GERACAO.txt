@@ -11,13 +11,14 @@ Comando -> id  ["["Expressão"]"] <- Expressão  ; |
 Repetição -> while Expressão  Bloco_ou_Comando
 Teste -> if Expressão  Bloco_ou_Comando [else Bloco_ou_Comando]
 Operadores_Relacional -> =  | !=  | < | >  | <=  | >=
-Expressão -> Expressão1_1  [Operadores_Relacional Expressão1_2 ]
-Expressão1 -> [- ] Expressão2_1  {(-  | +  | ||  )  Expressão2_2 }
-Expressão2 -> Expressão3_1 {(* | && | / | div | mod) Expressão3_2 }
-Expressão3 -> {!} Expressão4
-Expressão4 -> ( (int  | float ) "("Expressão ")" | Expressão5 )
-Expressão5 -> "(" Expressão  ")" | Expressão6
-Expressão6 -> const_value  | id  ["[" Expressão  "]"]
+Expressão -> Expressão1_1 (18) [Operadores_Relacional Expressão1_2(19) ] Falta Operações
+Expressão1 -> [-] Expressão2_1(16)  {(-  | +  | ||  )  Expressão2_2 (17)} Falta Operações
+Expressão2 -> Expressão3_1(14) {(* | && | / | div | mod) Expressão3_2 (15) } Falta Operações
+Expressão3 -> {!} Expressão4 (13) OK
+Expressão4 -> ( (int  | float ) "("Expressão ")" (12) | Expressão5 (11) ) Falta Conversão
+Expressão5 -> "(" Expressão  ")"(10) | Expressão6 (9) OK
+Expressão6 -> const_value (7) | id  ["[" Expressão  "]"] (8) OK
+//NUNCA PODDEMOS MODIFICAR NADA QUE ESTÁ NO ENDEREÇO DE RETORNO DE UMA EXPRESSÃO, SOMENTE CONSULTAR.
 
 Done
 (1) {
@@ -193,7 +194,7 @@ mov rax, 0 ;chamada para leitura
 mov rdi, 0 ;leitura do teclado
 syscall
 
-Declaração_Init ->  id  [<- [-] const_value (5)]
+
 (5) {
     se const_value.type == String:
         id.address = dataCount//java
@@ -258,4 +259,112 @@ Declaração_Init ->  id  [<- [-] const_value (5)]
          resb 1
          section .text
          dataCount+= 1//java
+}
+
+Done
+(7) {
+    se const_value.type == String:
+        expressão6.address = dataCount//java
+        expressão6.size = 255
+        section .data:
+        db const_value.lex, 0
+        resb 255 - const_value.size
+        section .text:
+        dataCount+=256//java
+    senão se const_value.type == Inteiro:
+        expressão6.address = dataCount; //java
+        expressão6.size = constValue.size; //java
+        section .data:
+        dd const_value.lex
+        section .text:
+        dataCount += 4 //java
+    senão se const_value.type == float:
+        expressão6.address = dataCount; //java
+        expressão6.size = constValue.size; //java
+        section .data:
+        se Declaração_Init.isNegative://java
+        dd -const_value.lex
+        senão://java
+        dd const_value.lex
+        section .text:
+        dataCount+=const_value.size//java
+    senão se const_value.type == Character:
+        expressão6.address = dataCount; //java
+        expressão6.size = 1; //java
+        section .data:
+        db 'const_value.lex'
+        section .text:
+        dataCount+= 1//java
+}
+Done
+(8) {
+    se expression6.hasStringAccess:
+        mov rax, M+id.end ;endereço base da string
+        mov rbx, [M+expressão.end] ;pega resultado da expressão e joga em rbx
+        add rax, rbx ; soma o endereço base ao indice, para pegar o endereço do char
+        novoTemp = generateNovoTemp()//java
+        mov al, [rax] ;move o char pra al
+        mov [M+novoTemp], al;move o char para o temporario
+        expressão6.address = novoTemp//java
+        expressão6.size = 1//java
+    senão:
+        expressão6.end = id.end
+        expressão6.size = id.size
+
+}
+
+Expressão5 -> "(" Expressão  ")"(10) | Expressão6 (9)
+
+(9) {
+    Expressão5.address = expressão6.address
+    expressão5.size = expressão6.size
+}
+
+(10) {
+    Expressão5.address = expressão.address
+    expressão5.size = expressão.size
+}
+
+(11) {
+    Expressão4.address = expressão5.address
+    expressão4.size = expressão5.size
+}
+
+(12) {
+   implementar conversão
+}
+
+Done
+(13) {
+    se shouldNegateExpression:
+        novotemp = generateNovoTemp()//java
+        mov eax, [M+exp4.end]
+        neg eax
+        add eax, 1
+        mov[M+novoTemp], eax
+        expressão3.end = novoTemp
+        expressão3.size = expressão4.size
+    senão:
+        expressão3.end = expressão4.end
+        expressão3.size = expressão4.size
+
+}
+
+Done
+(14) {
+    expressão2.end = Expressão3_1.end
+    expressão2.size = Expressão3_1.size
+}
+Parcialmente Done
+(16) {
+    se expressão1.isNegative:
+        //LEMBRAR DE FAZER A MULTIPLICAÇÃO POR -1 DEPOIS
+    senão:
+        expressão1.end = Expressão2_1.end
+        expressão1.size = Expressão2_1.size
+}
+
+(18) {
+    expressão.end = Expressão1_1.end
+    expressão.size = Expressão1_1.size
 }

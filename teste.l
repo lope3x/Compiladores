@@ -1,1 +1,3 @@
-writeln(1.5);
+string nome <-"Palavra muito grande sdfjoghdsiofhdsioh";
+
+writeln(0x61);
