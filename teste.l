@@ -1,1 +1,1 @@
-const x = -5;
+writeln(1.5);

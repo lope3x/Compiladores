@@ -355,13 +355,135 @@ class CodeGenerator {
     public void codeGenerate3(ExpressionReturn expressionReturn) {
         switch (expressionReturn.type){
             case STRING:
-                break;
-            case REAL:
+                generatedCode+="mov rsi, M+"+expressionReturn.address +"\n" +
+                        "mov rdx, "+expressionReturn.size +"\n" +
+                        "mov rax, 1 ;chamada para saída\n" +
+                        "mov rdi, 1 ;saída para tela\n" +
+                        "syscall; chamada do sistema\n";
                 break;
             case BOOLEAN:
             case INTEGER:
+                long temporaryAddress = getNewTemporaryAddress(4);
+                String label0 = getNewLabel();
+                String label1 = getNewLabel();
+                String label2 = getNewLabel();
+                generatedCode+= "mov eax, [M+"+expressionReturn.address+"]\n" +
+                        "mov rsi, M+"+temporaryAddress+"\n" +
+                        "mov rcx, 0 ;contador pilha\n" +
+                        "mov rdi, 0 ;tam. string convertido\n" +
+                        "cmp eax, 0 ;verifica sinal\n" +
+                        "jge "+label0+";salta se número positivo\n" +
+                        "mov bl, '-' ;senão, escreve sinal –\n" +
+                        "mov [rsi], bl\n" +
+                        "add rsi, 1 ;incrementa índice\n" +
+                        "add rdi, 1 ;incrementa tamanho\n" +
+                        "neg eax ;toma módulo do número\n" +
+                        label0+":\n" +
+                        "mov ebx, 10 ;divisor\n" +
+                        label1+":\n" +
+                        "add rcx, 1 ;incrementa contador\n" +
+                        "cdq ;estende edx:eax p/ div.\n" +
+                        "idiv ebx ;divide edx;eax por ebx\n" +
+                        "push dx ;empilha valor do resto\n" +
+                        "cmp eax, 0 ;verifica se quoc. é 0\n" +
+                        "jne "+label1+";se não é 0, continua\n" +
+                        "add rdi,rcx ;atualiza tam. string\n" +
+                        ";agora, desemp. os valores e escreve o string\n" +
+                        label2+":\n" +
+                        "pop dx ;desempilha valor\n" +
+                        "add dl, '0' ;transforma em caractere\n" +
+                        "mov [rsi], dl ;escreve caractere\n" +
+                        "add rsi, 1 ;incrementa base\n" +
+                        "sub rcx, 1 ;decrementa contador\n" +
+                        "cmp rcx, 0 ;verifica pilha vazia\n" +
+                        "jne "+label2+";se não pilha vazia, loop\n" +
+                        "; Interrupção de saida\n" +
+                        "mov rsi, M+"+temporaryAddress+";ou buffer.end\n" +
+                        "mov rdx, rdi ;ou buffer.tam\n" +
+                        "mov rax, 1 ;chamada para saída\n" +
+                        "mov rdi, 1 ;saída para tela\n" +
+                        "syscall\n";
+                break;
+            case REAL:
+                temporaryAddress = getNewTemporaryAddress(4);
+                label0 = getNewLabel();
+                label1 = getNewLabel();
+                label2 = getNewLabel();
+                String label3 = getNewLabel();
+                String label4 = getNewLabel();
+                generatedCode+="movss xmm0, [qword M+"+expressionReturn.address+"];real a ser impresso\n" +
+                        "mov rsi, M+"+temporaryAddress+";end. temporário\n" +
+                        "mov rcx, 0 ;contador pilha\n" +
+                        "mov rdi, 6 ;precisao 6 casas compart\n" +
+                        "mov rbx, 10 ;divisor\n" +
+                        "cvtsi2ss xmm2, rbx ;divisor real\n" +
+                        "subss xmm1, xmm1 ;zera registrador\n" +
+                        "comiss xmm0, xmm1 ;verifica sinal\n" +
+                        "jae "+label0+";salta se número positivo\n" +
+                        "mov dl, '-' ;senão, escreve sinal –\n" +
+                        "mov [rsi], dl\n" +
+                        "mov rdx, -1 ;Carrega -1 em RDX\n" +
+                        "cvtsi2ss xmm1, rdx ;Converte para real\n" +
+                        "mulss xmm0, xmm1 ;Toma módulo\n" +
+                        "add rsi, 1 ;incrementa índice\n" +
+                        label0+":\n" +
+                        "roundss xmm1, xmm0, 0b0011 ;parte inteira xmm1\n" +
+                        "subss xmm0, xmm1 ;parte frac xmm0\n" +
+                        "cvtss2si rax, xmm1 ;convertido para int\n" +
+                        ";converte parte inteira que está em rax\n" +
+                        label1+":\n" +
+                        "add rcx, 1 ;incrementa contador\n" +
+                        "cdq ;estende edx:eax p/ div.\n" +
+                        "idiv ebx ;divide edx;eax por ebx\n" +
+                        "push dx ;empilha valor do resto\n" +
+                        "cmp eax, 0 ;verifica se quoc. é 0\n" +
+                        "jne "+label1+";se não é 0, continua\n" +
+                        "sub rdi, rcx ;decrementa precisao\n" +
+                        ";agora, desemp valores e escreve parte int\n" +
+                        label2+":\n" +
+                        "pop dx ;desempilha valor\n" +
+                        "add dl, '0' ;transforma em caractere\n" +
+                        "mov [rsi], dl ;escreve caractere\n" +
+                        "add rsi, 1 ;incrementa base\n" +
+                        "sub rcx, 1 ;decrementa contador\n" +
+                        "cmp rcx, 0 ;verifica pilha vazia\n" +
+                        "jne "+label2 +";se não pilha vazia, loop\n" +
+                        "mov dl, '.' ;escreve ponto decimal\n" +
+                        "mov [rsi], dl\n" +
+                        "add rsi, 1 ;incrementa base\n" +
+                        ";converte parte fracionaria que está em xmm0\n" +
+                        label3+":\n" +
+                        "cmp rdi, 0 ;verifica precisao\n" +
+                        "jle "+label4+";terminou precisao ?\n" +
+                        "mulss xmm0,xmm2 ;desloca para esquerda\n" +
+                        "roundss xmm1,xmm0,0b0011 ;parte inteira xmm1\n" +
+                        "subss xmm0,xmm1 ;atualiza xmm0\n" +
+                        "cvtss2si rdx, xmm1 ;convertido para int\n" +
+                        "add dl, '0' ;transforma em caractere\n" +
+                        "mov [rsi], dl ;escreve caractere\n" +
+                        "add rsi, 1 ;incrementa base\n" +
+                        "sub rdi, 1 ;decrementa precisao\n" +
+                        "jmp +"+label3+"\n" +
+                        "; impressão\n" +
+                        label4+":\n" +
+                        "mov dl, 0 ;fim string, opcional\n" +
+                        "mov [rsi], dl ;escreve caractere\n" +
+                        "mov rdx, rsi ;calc tam str convertido\n" +
+                        "mov rbx, M+"+temporaryAddress+"\n" +
+                        "sub rdx, rbx ;tam=rsi-M-buffer.end\n" +
+                        "mov rsi, M+"+temporaryAddress+"; endereço do buffer\n" +
+                        "\n" +
+                        "; Interrupção de saida\n" +
+                        "mov rax, 1 ;chamada para saída\n" +
+                        "mov rdi, 1 ;saída para tela\n" +
+                        "syscall\n";
                 break;
             case CHARACTER:
+                generatedCode+="mov rsi, M+"+expressionReturn.address+"\n" +
+                        "mov rdx, 1 ;buffer end\n" +
+                        "mov rax, 1 ;chamada para saída\n" +
+                        "mov rdi, 1 ;saída para tela\n" +
+                        "syscall; chamada do sistema\n";
                 break;
         }
     }
@@ -503,7 +625,7 @@ class SemanticAnalyzer {
             throw new CompilerError("identificador nao declarado ["+ id.symbol.lexeme +"].", lastTokenReadLine);
         }
         else if(id.symbol.idClass == Class.CONST) {
-            throw new CompilerError("classe de identificador incompativel ["+ id.symbol.lexeme +"].", lastTokenReadLine);
+            throw new CompilerError("classe de identificador incompatível ["+ id.symbol.lexeme +"].", lastTokenReadLine);
         }
     }
 
