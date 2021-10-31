@@ -685,10 +685,20 @@ class CodeGenerator {
                 }
                 else {
                     if(expression3_2Return.type == Type.REAL){
+                        generatedCode += "mov eax, [M"+expression2Data.address+"]\n" +
+                         "cdqe\n" +
+                         "cvtsi2ss xmm0,rax\n" +
+                         "movss xmm1, [M+"+expression3_2Return.address+"]\n" +
+                         "mulss xmm0, xmm1\n" +
+                         "movss [M+"+newTemporary+"], xmm0";
 
                     }
                     else {
-
+                        generatedCode += "mov eax, [M+"+expression2Data.address+".end]\n" +
+                                "mov ebx, [M+"+expression3_2Return.address+"]\n" +
+                                "imul ebx\n" +
+                                "cdqe\n" +
+                                "mov [M+"+newTemporary+"], rax";
                     }
                 }
                 break;
