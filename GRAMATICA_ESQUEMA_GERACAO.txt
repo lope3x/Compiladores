@@ -15,7 +15,7 @@ Expressão -> Expressão1_1 (18) [Operadores_Relacional Expressão1_2(19) ] Falt
 Expressão1 -> [-] Expressão2_1(16)  {(-  | +  | ||  )  Expressão2_2 (17)} Falta Operações
 Expressão2 -> Expressão3_1(14) {(* | && | / | div | mod) Expressão3_2 (15) } Falta Operações
 Expressão3 -> {!} Expressão4 (13) OK
-Expressão4 -> ( (int  | float ) "("Expressão ")" (12) | Expressão5 (11) ) Falta Conversão
+Expressão4 -> ( (int  | float ) "("Expressão ")" (12) | Expressão5 (11) ) OK
 Expressão5 -> "(" Expressão  ")"(10) | Expressão6 (9) OK
 Expressão6 -> const_value (7) | id  ["[" Expressão  "]"] (8) OK
 //NUNCA PODDEMOS MODIFICAR NADA QUE ESTÁ NO ENDEREÇO DE RETORNO DE UMA EXPRESSÃO, SOMENTE CONSULTAR.
@@ -330,8 +330,32 @@ Expressão5 -> "(" Expressão  ")"(10) | Expressão6 (9)
     expressão4.size = expressão5.size
 }
 
+Done
 (12) {
-   implementar conversão
+   se expression4Type == int:
+        se Expressão.type == int:
+            expressão4.end = Expressão.end
+            expressão4.size = Expressão.size
+        senão:
+            novotemp = generateNovoTemp()//java
+            movss xmm0, [M+Expressão.end]
+            cvtss2si rax,xmm0
+            mov [M+novotemp], rax
+            expressão4.end = novotemp
+            expressão4.size = 4
+   senão:
+        se Expressão.type == int:
+            novotemp = generateNovoTemp()//java
+            mov eax, [M+expressão.end]
+            cdqe
+            cvtsi2ss xmm0,rax
+            movss [M+novotemp], xmm0
+            expressão4.end = novotemp
+            expressão4.size = 4
+        senão:
+            expressão4.end = Expressão.end
+            expressão4.size = Expressão.size
+
 }
 
 Done
@@ -355,10 +379,67 @@ Done
     expressão2.end = Expressão3_1.end
     expressão2.size = Expressão3_1.size
 }
-Parcialmente Done
+Expressão2 -> Expressão3_1(14) {(* | && | / | div | mod) Expressão3_2 (15) } Falta Operações
+(15) {
+    novoTemp = getNewTemp()//java
+    se Expressão2.operator == *
+        se Expressão2.tipo == real:
+            se Expressão3_2.tipo == real:
+                //mulss
+                mov xmm0, [M+Expressão2.end]
+                mov xmm1, [M+Expressão3_2.end]
+                mulss xmm0, xmm1
+                movss [M+novoTemp], xmm0
+            senão:
+                //converter
+                mov eax, [M+Expressão3_2.end]
+                cdqe
+                cvtsi2ss xmm0,rax
+                movss xmm1, [M+Expressão2.end]
+                mulss xmm0, xmm1
+                movss [M+novoTemp], xmm0
+        senão:
+            se Expressão3_2.tipo == real:
+                mov eax, [M+Expressão2.end]
+                cdqe
+                cvtsi2ss xmm0,rax
+                movss xmm1, [M+Expressão3_2.end]
+                mulss xmm0, xmm1
+                movss [M+novoTemp], xmm0
+            senão:
+                mov eax, [M+Expressão2.end]
+                mov ebx, [M+Expressão3_2.end]
+                imul ebx
+                cdqe
+                mov [M+novoTemp], rax
+    se Expressão2.operator == &&
+    se Expressão2.operator == /
+    se Expressão2.operator == div
+    se Expressão2.operator == mod
+
+
+    Expressão2.end = novoTemp
+
+}
+Done
 (16) {
     se expressão1.isNegative:
-        //LEMBRAR DE FAZER A MULTIPLICAÇÃO POR -1 DEPOIS
+        novotemp = generateNovoTemp()//java
+        se Expressão2_1.tipo == real
+            mov rax, -1
+            cvtsi2ss xmm0, rax
+            movss xmm1, [Expressão2_1.end]
+            mulss xmm0, xmm1
+            movss [novotemp], xmm0
+            Expressão1.end = novotemp
+            expressão1.size = Expressão2_1.size
+        senão
+            mov eax, [Expressão2_1.end]
+            neg eax
+            mov [novotemp], eax
+            Expressão1.end = novotemp
+            expressão1.size = Expressão2_1.size
+
     senão:
         expressão1.end = Expressão2_1.end
         expressão1.size = Expressão2_1.size

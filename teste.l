@@ -1,3 +1,2 @@
-string nome <-"Palavra muito grande sdfjoghdsiofhdsioh";
-
-writeln(0x61);
+float x <-5.45;
+writeln(float(x));

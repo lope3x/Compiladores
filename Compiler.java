@@ -626,6 +626,34 @@ class CodeGenerator {
         }
     }
 
+    public ExpressionReturn codeGenerate12(Type expression4Type, ExpressionReturn expressionReturn) {
+        if(expression4Type == Type.INTEGER){
+            if(expressionReturn.type == Type.INTEGER) {
+                return expressionReturn;
+            }
+            else {
+                long newTemporaryAddress = getNewTemporaryAddress(4);
+                generatedCode+="movss xmm0, [M+"+expressionReturn.address+"]\n" +
+                        "cvtss2si rax,xmm0\n" +
+                        "mov [M+"+newTemporaryAddress+"], rax\n";
+                return new ExpressionReturn(Type.INTEGER, newTemporaryAddress, 4);
+            }
+        }
+        else {
+            if(expressionReturn.type == Type.INTEGER) {
+                long newTemporaryAddress = getNewTemporaryAddress(4);
+                generatedCode+="mov eax, [M+"+expressionReturn.address+"]\n" +
+                        "cdqe\n"+
+                        "cvtsi2ss xmm0,rax\n" +
+                        "movss [M+"+newTemporaryAddress+"], xmm0\n";
+                return new ExpressionReturn(Type.REAL, newTemporaryAddress, 4);
+            }
+            else {
+                return expressionReturn;
+            }
+        }
+    }
+
     public ExpressionReturn codeGenerate13(boolean shouldNegateExpression, ExpressionReturn expression4Return){
         if(shouldNegateExpression) {
             long newTemporary = getNewTemporaryAddress(expression4Return.size);
@@ -640,10 +668,62 @@ class CodeGenerator {
         }
     }
 
+    public ExpressionReturn codeGenerate15(ExpressionReturn expression2Data, ExpressionReturn expression3_2Return, Token operator) {
+        long newTemporary = getNewTemporaryAddress(4);
+        switch (operator){
+            case MULTIPLICATION:
+                if(expression2Data.type == Type.REAL) {
+                    if(expression3_2Return.type == Type.REAL){
+                        generatedCode+="mov xmm0, [M+Expressão2.end]\n" +
+                                "mov xmm1, [M+Expressão3_2.end]\n" +
+                                "mulss xmm0, xmm1\n" +
+                                "movss [M+novoTemp], xmm0\n";
+                    }
+                    else {
+
+                    }
+                }
+                else {
+                    if(expression3_2Return.type == Type.REAL){
+
+                    }
+                    else {
+
+                    }
+                }
+                break;
+            case AND:
+                break;
+            case DIVISION:
+                break;
+            case DIV:
+                break;
+            case MOD:
+                break;
+        }
+
+        return new ExpressionReturn(expression2Data.type, newTemporary, 4);
+    }
+
     public ExpressionReturn codeGenerate16(boolean isNegative, ExpressionReturn expression2_1Return) {
         if(isNegative){
-            //TODO negar expression 2 return
-            return expression2_1Return;
+            long newTemporaryAddress = getNewTemporaryAddress(4);
+            ExpressionReturn expressionReturn;
+            if(expression2_1Return.type == Type.REAL) {
+                generatedCode+="mov rax, -1\n" +
+                        "cvtsi2ss xmm0, rax\n" +
+                        "movss xmm1, [M+"+expression2_1Return.address+"]\n" +
+                        "mulss xmm0, xmm1\n" +
+                        "movss [M+"+newTemporaryAddress+"], xmm0\n";
+                expressionReturn = new ExpressionReturn(Type.REAL, newTemporaryAddress, expression2_1Return.size);
+            }
+            else {
+                generatedCode+="mov eax, [M+"+expression2_1Return.address+"]\n" +
+                        "neg eax\n" +
+                        "mov [M+"+newTemporaryAddress+"], eax\n";
+                expressionReturn = new ExpressionReturn(Type.INTEGER, newTemporaryAddress, expression2_1Return.size);
+            }
+            return expressionReturn;
         }
         else {
             return expression2_1Return;
@@ -718,7 +798,7 @@ class SemanticAnalyzer {
             throw new CompilerError("identificador nao declarado ["+ id.symbol.lexeme +"].", lastTokenReadLine);
         }
         else if(id.symbol.idClass == Class.CONST) {
-            throw new CompilerError("classe de identificador incompatível ["+ id.symbol.lexeme +"].", lastTokenReadLine);
+            throw new CompilerError("classe de identificador incompativel ["+ id.symbol.lexeme +"].", lastTokenReadLine);
         }
     }
 
@@ -771,7 +851,7 @@ class SemanticAnalyzer {
         return expressionReturn;
     }
 
-    public ExpressionReturn semanticAction17(Type expression2_1Type, Type expression2_2Type, Token operator) throws CompilerError {
+    public ExpressionReturn semanticAction17(Type expression2_1Type, Type expression2_2Type, Token operator, ExpressionReturn expression1Data) throws CompilerError {
         Type expressionType;
         if(expression2_1Type == Type.STRING || expression2_1Type == Type.CHARACTER || expression2_2Type == Type.STRING || expression2_2Type == Type.CHARACTER) {
             throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
@@ -780,7 +860,7 @@ class SemanticAnalyzer {
             expressionType = Type.BOOLEAN;
             if(operator != Token.OR)
                 throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
-            return new ExpressionReturn(expressionType, 0, 0);
+            return new ExpressionReturn(expressionType, expression1Data.address, expression1Data.size);
         }
         else if(expression2_1Type == Type.BOOLEAN || expression2_2Type == Type.BOOLEAN){
             throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
@@ -794,7 +874,7 @@ class SemanticAnalyzer {
         if(operator == Token.OR) {
             throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
-        return new ExpressionReturn(expressionType, 0, 0);
+        return new ExpressionReturn(expressionType, expression1Data.address, expression1Data.size);
     }
 
     public ExpressionReturn semanticAction22(ExpressionReturn expression2_1Return, boolean isNegative) throws CompilerError {
@@ -805,7 +885,7 @@ class SemanticAnalyzer {
         return codeGenerator.codeGenerate16(isNegative, expression2_1Return);
     }
 
-    public ExpressionReturn semanticAction23(Type expression3_1Type, Type expression3_2Type, Token operator) throws CompilerError {
+    public ExpressionReturn semanticAction23(Type expression3_1Type, Type expression3_2Type, Token operator, ExpressionReturn expression2Data) throws CompilerError {
         Type expressionType;
         if(expression3_1Type == Type.STRING || expression3_1Type == Type.CHARACTER || expression3_2Type == Type.STRING || expression3_2Type == Type.CHARACTER) {
             throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
@@ -814,7 +894,7 @@ class SemanticAnalyzer {
             expressionType = Type.BOOLEAN;
             if(operator != Token.AND)
                 throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
-            return new ExpressionReturn(expressionType, 0, 0);
+            return new ExpressionReturn(expressionType, expression2Data.address, expression2Data.size);
         }
         else if(expression3_1Type == Type.BOOLEAN || expression3_2Type == Type.BOOLEAN){
             throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
@@ -833,7 +913,7 @@ class SemanticAnalyzer {
         if(operator == Token.DIVISION) {
             expressionType = Type.REAL;
         }
-        return new ExpressionReturn(expressionType, 0, 0);
+        return new ExpressionReturn(expressionType, expression2Data.address, expression2Data.size);
     }
     
 
@@ -1126,7 +1206,7 @@ class SyntaxAnalyzer {
                 matchToken(Token.OR);
             }
             ExpressionReturn expression2_2Return = expression2();
-            expression1Data = semanticAnalyzer.semanticAction17(expression2_1Return.type, expression2_2Return.type, operator);
+            expression1Data = semanticAnalyzer.semanticAction17(expression2_1Return.type, expression2_2Return.type, operator, expression1Data);
             currentToken = currentRegister.symbol.tokenType;
         }
         return expression1Data;
@@ -1161,7 +1241,8 @@ class SyntaxAnalyzer {
                 matchToken(Token.MOD); // Ação 28
             }
             ExpressionReturn expression3_2Return = expression3();
-            expression2Data = semanticAnalyzer.semanticAction23(expression3_1Return.type, expression3_2Return.type, operator);
+            expression2Data = semanticAnalyzer.semanticAction23(expression3_1Return.type, expression3_2Return.type, operator, expression2Data);
+            expression2Data = codeGenerator.codeGenerate15(expression2Data, expression3_2Return, operator);
             currentToken = currentRegister.symbol.tokenType;
         }
         return expression2Data;
@@ -1202,11 +1283,10 @@ class SyntaxAnalyzer {
                 expression4Type = Type.REAL;//Ação 44
                 matchToken(Token.FLOAT);
             }
-
-            expression4Data = new ExpressionReturn(expression4Type, 0, 0);
             matchToken(Token.OPEN_PARENTESIS);
             ExpressionReturn expressionReturn = expression();
             semanticAnalyzer.semanticAction32(expressionReturn.type);
+            expression4Data = codeGenerator.codeGenerate12(expression4Type, expressionReturn);
             matchToken(Token.CLOSE_PARENTESIS);
         }
         else {
