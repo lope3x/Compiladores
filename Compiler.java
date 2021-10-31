@@ -674,13 +674,18 @@ class CodeGenerator {
             case MULTIPLICATION:
                 if(expression2Data.type == Type.REAL) {
                     if(expression3_2Return.type == Type.REAL){
-                        generatedCode+="mov xmm0, [M+Expressão2.end]\n" +
-                                "mov xmm1, [M+Expressão3_2.end]\n" +
+                        generatedCode+="movss xmm0, [M+"+expression2Data.address+"]\n" +
+                                "movss xmm1, [M+"+expression3_2Return.address+"]\n" +
                                 "mulss xmm0, xmm1\n" +
-                                "movss [M+novoTemp], xmm0\n";
+                                "movss [M+"+newTemporary+"], xmm0\n";
                     }
                     else {
-
+                        generatedCode+="mov eax, [M+"+expression3_2Return.address+"]\n" +
+                                "cdqe\n" +
+                                "cvtsi2ss xmm0,rax\n" +
+                                "movss xmm1, [M+"+expression2Data.address+"]\n" +
+                                "mulss xmm0, xmm1\n" +
+                                "movss [M+"+newTemporary+"], xmm0\n";
                     }
                 }
                 else {

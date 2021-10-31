@@ -1,2 +1,2 @@
-float x <-5.45;
-writeln(float(x));
+float x;
+writeln(2*2.5);

@@ -5,10 +5,20 @@ section .text
 global _start
 _start:
 section .data
-dd 5.45
+resd 1
 section .text
-movss xmm0, [qword M+65536];real a ser impresso
-mov rsi, M+0;end. temporário
+section .data
+dd 2
+section .text
+section .data
+dd 2.5
+section .text
+movss xmm0, [M+65540]
+movss xmm1, [M+65544]
+mulss xmm0, xmm1
+movss [M+0], xmm0
+movss xmm0, [qword M+0];real a ser impresso
+mov rsi, M+4;end. temporário
 mov rcx, 0 ;contador pilha
 mov rdi, 6 ;precisao 6 casas compart
 mov rbx, 10 ;divisor
@@ -65,9 +75,9 @@ Label4:
 mov dl, 0 ;fim string, opcional
 mov [rsi], dl ;escreve caractere
 mov rdx, rsi ;calc tam str convertido
-mov rbx, M+0
+mov rbx, M+4
 sub rdx, rbx ;tam=rsi-M-buffer.end
-mov rsi, M+0; endereço do buffer
+mov rsi, M+4; endereço do buffer
 
 ; Interrupção de saida
 mov rax, 1 ;chamada para saída
@@ -76,7 +86,7 @@ syscall
 section .data
 db 10
 section .text
-mov rsi, M+65540
+mov rsi, M+65548
 mov rdx, 1 ;1 byte apenas
 mov rax, 1 ;chamada para saida
 mov rdi, 1 ;saida para tela

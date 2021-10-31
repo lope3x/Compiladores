@@ -386,8 +386,8 @@ Expressão2 -> Expressão3_1(14) {(* | && | / | div | mod) Expressão3_2 (15) } 
         se Expressão2.tipo == real:
             se Expressão3_2.tipo == real:
                 //mulss
-                mov xmm0, [M+Expressão2.end]
-                mov xmm1, [M+Expressão3_2.end]
+                movss xmm0, [M+Expressão2.end]
+                movss xmm1, [M+Expressão3_2.end]
                 mulss xmm0, xmm1
                 movss [M+novoTemp], xmm0
             senão:
