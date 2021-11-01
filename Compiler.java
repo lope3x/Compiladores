@@ -842,6 +842,13 @@ class CodeGenerator {
                 }
                 break;
             case OR:
+                generatedCode += "mov eax, [M+"+expression1Data.address+"]\n" +
+                        "mov ebx, [M+"+expression2_2Return.address+"]\n" +
+                        "add eax, ebx\n" +
+                        "mov ecx, 2\n" +
+                        "idiv ecx\n" +
+                        "add eax, edx\n" +
+                        "mov [M+"+newTemporary+"], eax\n";
                 break;
         }
 
