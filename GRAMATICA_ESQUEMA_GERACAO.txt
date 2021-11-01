@@ -13,7 +13,7 @@ Teste -> if Expressão  Bloco_ou_Comando [else Bloco_ou_Comando]
 Operadores_Relacional -> =  | !=  | < | >  | <=  | >=
 Expressão -> Expressão1_1 (18) [Operadores_Relacional Expressão1_2(19) ] Falta Operações
 Expressão1 -> [-] Expressão2_1(16)  {(-  | +  | ||  )  Expressão2_2 (17)} Falta Operações
-Expressão2 -> Expressão3_1(14) {(* | && | / | div | mod) Expressão3_2 (15) } Falta Operações
+Expressão2 -> Expressão3_1(14) {(* | && | / | div | mod) Expressão3_2 (15) } OK
 Expressão3 -> {!} Expressão4 (13) OK
 Expressão4 -> ( (int  | float ) "("Expressão ")" (12) | Expressão5 (11) ) OK
 Expressão5 -> "(" Expressão  ")"(10) | Expressão6 (9) OK
@@ -483,4 +483,75 @@ Done
 (18) {
     expressão.end = Expressão1_1.end
     expressão.size = Expressão1_1.size
+}
+
+Expressão1 -> [-] Expressão2_1(16)  {(-  | +  | ||  )  Expressão2_2 (17)} Falta Operações
+
+!(!a && !b) == (a || b)
+
+
+(17) {
+    novoTemp = getNewTemp()//java
+    se operador == -
+        se expressão1.tipo == real:
+            se Expressão2_2.tipo == real:
+                movss xmm0, [M+expressão1.end]
+                movss xmm1, [M+Expressão2_2.end]
+                subss xmm0, xmm1
+                movss [M+novotemp], xmm0
+            senão:
+                mov eax, [M+expressão2_2.end]
+                cdqe
+                cvtsi2ss xmm1,rax
+                movss xmm0, [M+expressão1.end]
+                subss xmm0, xmm1
+                movss [M+novotemp], xmm0
+        senão:
+            se Expressão2_2.tipo == real:
+                mov eax, [M+expressão1.end]
+                cdqe
+                cvtsi2ss xmm0,rax
+                movss xmm1, [M+expressão2_2.end]
+                subss xmm0, xmm1
+                movss [M+novotemp], xmm0
+            senão:
+                mov eax, [M+expressão1.end]
+                mov ebx, [M+expressão2_2.end]
+                add eax, ebx
+                mov [M+novoTemp], eax
+    se operador == +
+        se expressão1.tipo == real:
+            se Expressão2_2.tipo == real:
+                movss xmm0, [M+expressão1.end]
+                movss xmm1, [M+Expressão2_2.end]
+                addss xmm0, xmm1
+                movss [M+novotemp], xmm0
+            senão:
+                mov eax, [M+expressão2_2.end]
+                cdqe
+                cvtsi2ss xmm1,rax
+                movss xmm0, [M+expressão1.end]
+                addss xmm0, xmm1
+                movss [M+novotemp], xmm0
+        senão:
+            se Expressão2_2.tipo == real:
+                mov eax, [M+expressão1.end]
+                cdqe
+                cvtsi2ss xmm1,rax
+                movss xmm0, [M+expressão2_2.end]
+                addss xmm0, xmm1
+                movss [M+novotemp], xmm0
+            senão:
+                mov eax, [M+expressão1.end]
+                mov ebx, [M+expressão2_2.end]
+                add eax, ebx
+                mov [M+novoTemp], eax
+    se operador ||
+        mov eax, [M+expressão1.end]
+        mov ebx, [M+expressão2_2.end]
+        add eax, ebx
+        mov ecx, 2
+        idiv ecx
+        add eax, edx
+        mov [M+novoTemp], eax
 }

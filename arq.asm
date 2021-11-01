@@ -5,19 +5,48 @@ section .text
 global _start
 _start:
 section .data
-dd 5
+dd 4.35
 section .text
 section .data
-dd 2.0
+dd 1
 section .text
-mov eax, [M+65536]
+section .data
+dd 3
+section .text
+mov eax, [M+65540]
+mov ebx, [M+65544]
+imul ebx
+cdqe
+mov [M+0], rax
+section .data
+dd 5
+section .text
+mov eax, [M+0]
 cdqe
 cvtsi2ss xmm0,rax
-movss xmm1, [M+65540]
+mov eax, [M+65548]
+cdqe
+cvtsi2ss xmm1,rax
 divss xmm0, xmm1
-movss [M+0], xmm0
-movss xmm0, [qword M+0];real a ser impresso
-mov rsi, M+4;end. temporário
+movss [M+4], xmm0
+section .data
+dd 5
+section .text
+mov eax, [M+65552]
+cdqe
+cvtsi2ss xmm0,rax
+movss [M+8], xmm0
+movss xmm0, [M+4]
+movss xmm1, [M+8]
+mulss xmm0, xmm1
+movss [M+12], xmm0
+mov rax, -1
+cvtsi2ss xmm0, rax
+movss xmm1, [M+12]
+mulss xmm0, xmm1
+movss [M+16], xmm0
+movss xmm0, [qword M+16];real a ser impresso
+mov rsi, M+20;end. temporário
 mov rcx, 0 ;contador pilha
 mov rdi, 6 ;precisao 6 casas compart
 mov rbx, 10 ;divisor
@@ -74,9 +103,9 @@ Label4:
 mov dl, 0 ;fim string, opcional
 mov [rsi], dl ;escreve caractere
 mov rdx, rsi ;calc tam str convertido
-mov rbx, M+4
+mov rbx, M+20
 sub rdx, rbx ;tam=rsi-M-buffer.end
-mov rsi, M+4; endereço do buffer
+mov rsi, M+20; endereço do buffer
 
 ; Interrupção de saida
 mov rax, 1 ;chamada para saída

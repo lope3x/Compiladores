@@ -923,21 +923,21 @@ class SemanticAnalyzer {
         return expressionReturn;
     }
 
-    public ExpressionReturn semanticAction17(Type expression2_1Type, Type expression2_2Type, Token operator, ExpressionReturn expression1Data) throws CompilerError {
+    public ExpressionReturn semanticAction17(Type expression2_2Type, Token operator, ExpressionReturn expression1Data) throws CompilerError {
         Type expressionType;
-        if(expression2_1Type == Type.STRING || expression2_1Type == Type.CHARACTER || expression2_2Type == Type.STRING || expression2_2Type == Type.CHARACTER) {
+        if(expression1Data.type == Type.STRING || expression1Data.type  == Type.CHARACTER || expression2_2Type == Type.STRING || expression2_2Type == Type.CHARACTER) {
             throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
-        if(expression2_1Type == Type.BOOLEAN && expression2_2Type == Type.BOOLEAN) {
+        if(expression1Data.type  == Type.BOOLEAN && expression2_2Type == Type.BOOLEAN) {
             expressionType = Type.BOOLEAN;
             if(operator != Token.OR)
                 throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
             return new ExpressionReturn(expressionType, expression1Data.address, expression1Data.size);
         }
-        else if(expression2_1Type == Type.BOOLEAN || expression2_2Type == Type.BOOLEAN){
+        else if(expression1Data.type  == Type.BOOLEAN || expression2_2Type == Type.BOOLEAN){
             throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
-        else if(expression2_1Type == Type.REAL || expression2_2Type == Type.REAL) {
+        else if(expression1Data.type  == Type.REAL || expression2_2Type == Type.REAL) {
             expressionType = Type.REAL;
         }
         else {
@@ -1278,7 +1278,7 @@ class SyntaxAnalyzer {
                 matchToken(Token.OR);
             }
             ExpressionReturn expression2_2Return = expression2();
-            expression1Data = semanticAnalyzer.semanticAction17(expression2_1Return.type, expression2_2Return.type, operator, expression1Data);
+            expression1Data = semanticAnalyzer.semanticAction17(expression2_2Return.type, operator, expression1Data);
             currentToken = currentRegister.symbol.tokenType;
         }
         return expression1Data;
