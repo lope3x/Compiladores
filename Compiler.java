@@ -717,6 +717,44 @@ class CodeGenerator {
                         "mov [M+"+newTemporary+"], eax\n";
                 break;
             case DIVISION:
+                expressionType = Type.REAL;
+                if(expression2Data.type == Type.REAL) {
+                    if(expression3_2Return.type == Type.REAL){
+                        generatedCode+="movss xmm0, [M+"+expression2Data.address+"]\n" +
+                                "movss xmm1, [M+"+expression3_2Return.address+"]\n" +
+                                "divss xmm0, xmm1\n" +
+                                "movss [M+"+newTemporary+"], xmm0\n";
+                    }
+                    else {
+                        generatedCode+="mov eax, [M+"+expression3_2Return.address+"]\n" +
+                                "cdqe\n" +
+                                "cvtsi2ss xmm0,rax\n" +
+                                "movss xmm1, [M+"+expression2Data.address+"]\n" +
+                                "divss xmm1, xmm0\n" +
+                                "movss [M+"+newTemporary+"], xmm1\n";
+                    }
+                }
+                else {
+                    if(expression3_2Return.type == Type.REAL) {
+                        generatedCode += "mov eax, [M+"+expression2Data.address+"]\n" +
+                                "cdqe\n" +
+                                "cvtsi2ss xmm0,rax\n" +
+                                "movss xmm1, [M+"+expression3_2Return.address+"]\n" +
+                                "divss xmm0, xmm1\n" +
+                                "movss [M+"+newTemporary+"], xmm0\n";
+
+                    }
+                    else {
+                        generatedCode += "mov eax, [M+"+expression2Data.address+"]\n" +
+                                "cdqe\n" +
+                                "cvtsi2ss xmm0,rax\n" +
+                                "mov eax, [M+"+expression3_2Return.address+"]\n" +
+                                "cdqe\n" +
+                                "cvtsi2ss xmm1,rax\n" +
+                                "divss xmm0, xmm1\n" +
+                                "movss [M+"+newTemporary+"], xmm0\n";
+                    }
+                }
                 break;
             case DIV:
                 break;
@@ -935,7 +973,7 @@ class SemanticAnalyzer {
             throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
         if(operator == Token.DIVISION) {
-            expressionType = Type.REAL;
+            expressionType = expression2Data.type;
         }
         return new ExpressionReturn(expressionType, expression2Data.address, expression2Data.size);
     }
