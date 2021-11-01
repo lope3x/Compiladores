@@ -575,7 +575,10 @@ Expressão -> Expressão1_1 (18) [Operadores_Relacional Expressão1_2(19) ] Falt
 
         se Expressão.type == Real:
             se Expressão1_2 == Real:
-                // Giovanni
+                movss xmm0, [M+Expressão.end]
+                movss xmm1, [M+Expressão1_2.end]
+                comiss xmm0, xmm1
+                operação
             senão:
                 //
         senão:
