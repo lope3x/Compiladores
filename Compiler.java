@@ -757,8 +757,18 @@ class CodeGenerator {
                 }
                 break;
             case DIV:
+                generatedCode+="mov eax, [M+"+expression2Data.address+"]\n" +
+                        "mov ebx, [M+"+expression3_2Return.address+"]\n" +
+                        "cdq\n"+
+                        "idiv ebx\n"+
+                        "mov [M+"+newTemporary+"], eax\n";
                 break;
             case MOD:
+                generatedCode+="mov eax, [M+"+expression2Data.address+"]\n" +
+                        "mov ebx, [M+"+expression3_2Return.address+"]\n" +
+                        "cdq\n"+
+                        "idiv ebx\n"+
+                        "mov [M+"+newTemporary+"], edx\n";
                 break;
         }
 
