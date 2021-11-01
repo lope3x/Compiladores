@@ -12,7 +12,7 @@ Repetição -> while Expressão  Bloco_ou_Comando
 Teste -> if Expressão  Bloco_ou_Comando [else Bloco_ou_Comando]
 Operadores_Relacional -> =  | !=  | < | >  | <=  | >=
 Expressão -> Expressão1_1 (18) [Operadores_Relacional Expressão1_2(19) ] Falta Operações
-Expressão1 -> [-] Expressão2_1(16)  {(-  | +  | ||  )  Expressão2_2 (17)} Falta Operações
+Expressão1 -> [-] Expressão2_1(16)  {(-  | +  | ||  )  Expressão2_2 (17)} OK
 Expressão2 -> Expressão3_1(14) {(* | && | / | div | mod) Expressão3_2 (15) } OK
 Expressão3 -> {!} Expressão4 (13) OK
 Expressão4 -> ( (int  | float ) "("Expressão ")" (12) | Expressão5 (11) ) OK
@@ -480,14 +480,6 @@ Done
         expressão1.size = Expressão2_1.size
 }
 
-(18) {
-    expressão.end = Expressão1_1.end
-    expressão.size = Expressão1_1.size
-}
-
-Expressão1 -> [-] Expressão2_1(16)  {(-  | +  | ||  )  Expressão2_2 (17)} Falta Operações
-
-
 (17) {
     novoTemp = getNewTemp()//java
     se operador == -
@@ -552,4 +544,54 @@ Expressão1 -> [-] Expressão2_1(16)  {(-  | +  | ||  )  Expressão2_2 (17)} Fal
         idiv ecx
         add eax, edx
         mov [M+novoTemp], eax
+}
+
+(18) {
+    expressão.end = Expressão1_1.end
+    expressão.size = Expressão1_1.size
+}
+
+
+Operadores_Relacional -> =  | !=  | < | >  | <=  | >=
+Expressão -> Expressão1_1 (18) [Operadores_Relacional Expressão1_2(19) ] Falta Operações
+
+(19) {
+    novoTemp = newTemporary(4)
+    se Expressão.type == string:
+
+    senão:
+        se operador: =
+            operação = je RotTrue
+        se operador: !=
+            operação = jne RotTrue
+        se operador: <
+            operação = jl RotTrue
+        se operador: >
+            operação = jg RotTrue
+        se operador: <=
+            operação = jle RotTrue
+        se operador: >=
+            operação = jge RotTrue
+
+        se Expressão.type == Real:
+            se Expressão1_2 == Real:
+                // Giovanni
+            senão:
+                //
+        senão:
+            se Expressão1_2 == Real:
+
+            senão:
+                mov eax, [M+Expressão.end]
+                mov ebx, [M+Expressão1_2.end]
+                cmp eax, ebx
+                operação
+                RotFalse://gerar pelo newLabel
+                mov eax, 0
+                mov [M+NovoTemp], eax
+                jmp RotFim
+                RotTrue://gerar pelo newLabel
+                mov eax, 1
+                mov [M+NovoTemp], eax
+                RotFim://gerar pelo newLabel
 }

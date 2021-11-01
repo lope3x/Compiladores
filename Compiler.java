@@ -512,7 +512,7 @@ class CodeGenerator {
                 id.symbol.size = 255;
                 int unUsedStringSpace = 255 - constvalue.size;
                 generatedCode+="section .data\n"+
-                        "db "+constvalue.symbol.lexeme+", 0\n"+
+                        "db "+constvalue.symbol.lexeme+", 0 ;"+dataCount+ "\n"+
                         "resb "+unUsedStringSpace+"\n"+
                         "section .text\n";
                 dataCount+=256;
@@ -528,7 +528,7 @@ class CodeGenerator {
                 else
                     lexeme = constvalue.symbol.lexeme;
                 generatedCode+="section .data\n"+
-                        "dd "+lexeme+"\n"+
+                        "dd "+lexeme+" ;"+dataCount+ "\n"+
                         "section .text\n";
                 dataCount+=4;
                 break;
@@ -536,7 +536,7 @@ class CodeGenerator {
                 id.symbol.address = dataCount;
                 id.symbol.size = 1;
                 generatedCode+="section .data\n"+
-                        "db "+constvalue.symbol.lexeme+"\n"+
+                        "db "+constvalue.symbol.lexeme+";"+dataCount+ "\n"+
                         "section .text\n";
                 dataCount+=1;
                 break;
@@ -583,7 +583,7 @@ class CodeGenerator {
                 expression6Size = 255;
                 int unUsedStringSpace = 255 - constValue.size;
                 generatedCode+="section .data\n"+
-                        "db "+constValue.symbol.lexeme+", 0\n"+
+                        "db "+constValue.symbol.lexeme+", 0;"+dataCount+"\n"+
                         "resb "+unUsedStringSpace+"\n"+
                         "section .text\n";
                 dataCount+=256;
@@ -595,7 +595,7 @@ class CodeGenerator {
                 expression6Size = 4;
                 String lexeme= "";
                 generatedCode+="section .data\n"+
-                        "dd "+constValue.symbol.lexeme+"\n"+
+                        "dd "+constValue.symbol.lexeme+";"+dataCount+"\n"+
                         "section .text\n";
                 dataCount+=4;
                 break;
@@ -603,7 +603,7 @@ class CodeGenerator {
                 expression6Address = dataCount;
                 expression6Size = 1;
                 generatedCode+="section .data\n"+
-                        "db "+constValue.symbol.lexeme+"\n"+
+                        "db "+constValue.symbol.lexeme+";"+dataCount+"\n"+
                         "section .text\n";
                 dataCount+=1;
                 break;
@@ -806,11 +806,11 @@ class CodeGenerator {
         switch (operator) {
             case MINUS:
                 if(expression1Data.type == Type.REAL){
-                    if(expression2_2Return.type == Type.REAL){
+                    if(expression2_2Return.type == Type.REAL) {
                         generatedCode += "movss xmm0, [M+"+expression1Data.address+"]\n" +
                                 "movss xmm1, [M+"+expression2_2Return.address+"]\n" +
                                 "subss xmm0, xmm1\n" +
-                                "movss [M+"+newTemporary+"], xmm0";
+                                "movss [M+"+newTemporary+"], xmm0\n";
                     }
                     else {
                         generatedCode += " mov eax, [M+"+expression2_2Return.address+"]\n" +
@@ -818,7 +818,7 @@ class CodeGenerator {
                                 "cvtsi2ss xmm1,rax\n" +
                                 "movss xmm0, [M+"+expression1Data.address+"]\n" +
                                 "subss xmm0, xmm1\n" +
-                                "movss [M+"+newTemporary+"], xmm0";
+                                "movss [M+"+newTemporary+"], xmm0\n";
                     }
                 }
                 else {
@@ -829,13 +829,13 @@ class CodeGenerator {
                                 "cvtsi2ss xmm0,rax\n" +
                                 "movss xmm1, [M+"+expression2_2Return.address+"]\n" +
                                 "subss xmm0, xmm1\n" +
-                                "movss [M+"+newTemporary+"], xmm0";
+                                "movss [M+"+newTemporary+"], xmm0\n";
                     }
                     else {
                         generatedCode += "mov eax, [M+"+expression1Data.address+"]\n" +
                                 "mov ebx, [M+"+expression2_2Return.address+"]\n" +
                                 "sub eax, ebx\n" +
-                                "mov [M+"+newTemporary+"], eax";
+                                "mov [M+"+newTemporary+"], eax\n";
                     }
                 }
                 break;
@@ -875,6 +875,7 @@ class CodeGenerator {
                 }
                 break;
             case OR:
+                expressionType = Type.BOOLEAN;
                 generatedCode += "mov eax, [M+"+expression1Data.address+"]\n" +
                         "mov ebx, [M+"+expression2_2Return.address+"]\n" +
                         "add eax, ebx\n" +
@@ -989,47 +990,40 @@ class SemanticAnalyzer {
         }
     }
 
-    public ExpressionReturn semanticAction10(Type expression1_1Type, Type expression1_2Type, Token operator) throws CompilerError {
-        ExpressionReturn expressionReturn = new ExpressionReturn(Type.BOOLEAN, 0, 0);
-        if((expression1_1Type == Type.INTEGER || expression1_1Type == Type.REAL) && expression1_2Type == Type.CHARACTER) {
+    public ExpressionReturn semanticAction10(ExpressionReturn expression1_1Data, Type expression1_2Type, Token operator) throws CompilerError {
+        ExpressionReturn expressionReturn = new ExpressionReturn(Type.BOOLEAN, expression1_1Data.address, 4);
+        if((expression1_1Data.type == Type.INTEGER || expression1_1Data.type == Type.REAL) && expression1_2Type == Type.CHARACTER) {
             throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
-        else if((expression1_2Type == Type.INTEGER || expression1_2Type == Type.REAL) && expression1_1Type == Type.CHARACTER) {
+        else if((expression1_2Type == Type.INTEGER || expression1_2Type == Type.REAL) && expression1_1Data.type == Type.CHARACTER) {
             throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
-        else if(expression1_1Type == Type.STRING && expression1_2Type == Type.STRING){
+        else if(expression1_1Data.type == Type.STRING && expression1_2Type == Type.STRING){
             if(operator != Token.EQUAL) {
                 throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
             }
         }
-        else if(expression1_1Type == Type.STRING || expression1_2Type == Type.STRING) {
+        else if(expression1_1Data.type == Type.STRING || expression1_2Type == Type.STRING) {
             throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
-        else if(expression1_1Type == Type.BOOLEAN || expression1_2Type == Type.BOOLEAN) {
+        else if(expression1_1Data.type == Type.BOOLEAN || expression1_2Type == Type.BOOLEAN) {
             throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
         return expressionReturn;
     }
 
     public ExpressionReturn semanticAction17(Type expression2_2Type, Token operator, ExpressionReturn expression1Data) throws CompilerError {
-        Type expressionType;
+        Type expressionType = expression1Data.type;
         if(expression1Data.type == Type.STRING || expression1Data.type  == Type.CHARACTER || expression2_2Type == Type.STRING || expression2_2Type == Type.CHARACTER) {
             throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
         if(expression1Data.type  == Type.BOOLEAN && expression2_2Type == Type.BOOLEAN) {
-            expressionType = Type.BOOLEAN;
             if(operator != Token.OR)
                 throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
             return new ExpressionReturn(expressionType, expression1Data.address, expression1Data.size);
         }
         else if(expression1Data.type  == Type.BOOLEAN || expression2_2Type == Type.BOOLEAN){
             throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
-        }
-        else if(expression1Data.type  == Type.REAL || expression2_2Type == Type.REAL) {
-            expressionType = Type.REAL;
-        }
-        else {
-            expressionType = Type.INTEGER;
         }
         if(operator == Token.OR) {
             throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
@@ -1336,7 +1330,7 @@ class SyntaxAnalyzer {
         if (isOnRelationalOperatorsFirst()){
             Token operator = relationalOperator();
             ExpressionReturn expression1_2Return = expression1();
-            expressionData = semanticAnalyzer.semanticAction10(expressionData.type, expression1_2Return.type, operator);
+            expressionData = semanticAnalyzer.semanticAction10(expressionData, expression1_2Return.type, operator);
         }
         return expressionData;
     }
