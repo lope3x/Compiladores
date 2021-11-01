@@ -825,19 +825,35 @@ class CodeGenerator {
             case PLUS:
                 if(expression1Data.type == Type.REAL){
                     if(expression2_2Return.type == Type.REAL){
-
+                        generatedCode+="movss xmm0, [M+"+expression1Data.address+"]\n" +
+                                "movss xmm1, [M+"+expression2_2Return.address+"]\n" +
+                                "addss xmm0, xmm1\n" +
+                                "movss [M+"+newTemporary+"], xmm0\n";
                     }
                     else {
-
+                        generatedCode+="mov eax, [M+"+expression2_2Return.address+"]\n" +
+                                "cdqe\n" +
+                                "cvtsi2ss xmm1,rax\n" +
+                                "movss xmm0, [M+"+expression1Data.address+"]\n" +
+                                "addss xmm0, xmm1\n" +
+                                "movss [M+"+newTemporary+"], xmm0\n";
                     }
                 }
                 else {
                     if(expression2_2Return.type == Type.REAL){
                         expressionType = Type.REAL;
-
+                        generatedCode+="mov eax, [M+"+expression1Data.address+"]\n" +
+                                "cdqe\n" +
+                                "cvtsi2ss xmm1,rax\n" +
+                                "movss xmm0, [M+"+expression2_2Return.address+"]\n" +
+                                "addss xmm0, xmm1\n" +
+                                "movss [M+"+newTemporary+"], xmm0\n";
                     }
                     else {
-
+                        generatedCode+="mov eax, [M+"+expression1Data.address+"]\n" +
+                                "mov ebx, [M+"+expression2_2Return.address+"]\n" +
+                                "add eax, ebx\n" +
+                                "mov [M+"+newTemporary+"], eax\n";
                     }
                 }
                 break;
