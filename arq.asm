@@ -8,13 +8,22 @@ section .data
 dd 4.35
 section .text
 section .data
+db "O resultado eh ", 0
+resb 240
+section .text
+mov rsi, M+65540
+mov rdx, 255
+mov rax, 1 ;chamada para saída
+mov rdi, 1 ;saída para tela
+syscall; chamada do sistema
+section .data
 dd 1
 section .text
 section .data
 dd 3
 section .text
-mov eax, [M+65540]
-mov ebx, [M+65544]
+mov eax, [M+65796]
+mov ebx, [M+65800]
 imul ebx
 cdqe
 mov [M+0], rax
@@ -24,7 +33,7 @@ section .text
 mov eax, [M+0]
 cdqe
 cvtsi2ss xmm0,rax
-mov eax, [M+65548]
+mov eax, [M+65804]
 cdqe
 cvtsi2ss xmm1,rax
 divss xmm0, xmm1
@@ -32,7 +41,7 @@ movss [M+4], xmm0
 section .data
 dd 5
 section .text
-mov eax, [M+65552]
+mov eax, [M+65808]
 cdqe
 cvtsi2ss xmm0,rax
 movss [M+8], xmm0
@@ -111,6 +120,14 @@ mov rsi, M+20; endereço do buffer
 mov rax, 1 ;chamada para saída
 mov rdi, 1 ;saída para tela
 syscall
+section .data
+db 10
+section .text
+mov rsi, M+65812
+mov rdx, 1 ;1 byte apenas
+mov rax, 1 ;chamada para saida
+mov rdi, 1 ;saida para tela
+syscall; chamada do sistema
 mov rax, 60
 mov rdi, 0
 syscall

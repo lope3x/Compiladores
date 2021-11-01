@@ -674,7 +674,6 @@ class CodeGenerator {
         switch (operator){
             case MULTIPLICATION:
                 if(expression2Data.type == Type.REAL) {
-                    expressionType = Type.REAL;
                     if(expression3_2Return.type == Type.REAL){
                         generatedCode+="movss xmm0, [M+"+expression2Data.address+"]\n" +
                                 "movss xmm1, [M+"+expression3_2Return.address+"]\n" +
@@ -798,6 +797,55 @@ class CodeGenerator {
         else {
             return expression2_1Return;
         }
+    }
+
+    public ExpressionReturn codeGenerate17(ExpressionReturn expression1Data,ExpressionReturn expression2_2Return,Token operator) {
+        long newTemporary = getNewTemporaryAddress(4);
+        Type expressionType = expression1Data.type;
+        switch (operator) {
+            case MINUS:
+                if(expression1Data.type == Type.REAL){
+                    if(expression2_2Return.type == Type.REAL){
+
+                    }
+                    else {
+
+                    }
+                }
+                else {
+                    if(expression2_2Return.type == Type.REAL){
+                        expressionType = Type.REAL;
+
+                    }
+                    else {
+
+                    }
+                }
+                break;
+            case PLUS:
+                if(expression1Data.type == Type.REAL){
+                    if(expression2_2Return.type == Type.REAL){
+
+                    }
+                    else {
+
+                    }
+                }
+                else {
+                    if(expression2_2Return.type == Type.REAL){
+                        expressionType = Type.REAL;
+
+                    }
+                    else {
+
+                    }
+                }
+                break;
+            case OR:
+                break;
+        }
+
+        return new ExpressionReturn(expressionType, newTemporary, 4);
     }
 }
 
@@ -1279,6 +1327,7 @@ class SyntaxAnalyzer {
             }
             ExpressionReturn expression2_2Return = expression2();
             expression1Data = semanticAnalyzer.semanticAction17(expression2_2Return.type, operator, expression1Data);
+            expression1Data = codeGenerator.codeGenerate17(expression1Data, expression2_2Return, operator);
             currentToken = currentRegister.symbol.tokenType;
         }
         return expression1Data;

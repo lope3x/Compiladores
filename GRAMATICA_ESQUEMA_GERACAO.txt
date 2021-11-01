@@ -487,8 +487,6 @@ Done
 
 Expressão1 -> [-] Expressão2_1(16)  {(-  | +  | ||  )  Expressão2_2 (17)} Falta Operações
 
-!(!a && !b) == (a || b)
-
 
 (17) {
     novoTemp = getNewTemp()//java
@@ -517,7 +515,7 @@ Expressão1 -> [-] Expressão2_1(16)  {(-  | +  | ||  )  Expressão2_2 (17)} Fal
             senão:
                 mov eax, [M+expressão1.end]
                 mov ebx, [M+expressão2_2.end]
-                add eax, ebx
+                sub eax, ebx
                 mov [M+novoTemp], eax
     se operador == +
         se expressão1.tipo == real:
