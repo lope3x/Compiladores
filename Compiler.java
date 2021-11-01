@@ -799,6 +799,7 @@ class CodeGenerator {
         }
     }
 
+
     public ExpressionReturn codeGenerate17(ExpressionReturn expression1Data,ExpressionReturn expression2_2Return,Token operator) {
         long newTemporary = getNewTemporaryAddress(4);
         Type expressionType = expression1Data.type;
@@ -806,19 +807,35 @@ class CodeGenerator {
             case MINUS:
                 if(expression1Data.type == Type.REAL){
                     if(expression2_2Return.type == Type.REAL){
-
+                        generatedCode += "movss xmm0, [M+"+expression1Data.address+"]\n" +
+                                "movss xmm1, [M+"+expression2_2Return.address+"]\n" +
+                                "subss xmm0, xmm1\n" +
+                                "movss [M+"+newTemporary+"], xmm0";
                     }
                     else {
-
+                        generatedCode += " mov eax, [M+"+expression2_2Return.address+"]\n" +
+                                "cdqe\n" +
+                                "cvtsi2ss xmm1,rax\n" +
+                                "movss xmm0, [M+"+expression1Data.address+"]\n" +
+                                "subss xmm0, xmm1\n" +
+                                "movss [M+"+newTemporary+"], xmm0";
                     }
                 }
                 else {
                     if(expression2_2Return.type == Type.REAL){
                         expressionType = Type.REAL;
-
+                        generatedCode += "mov eax, [M+"+expression1Data.address+"]\n" +
+                                "cdqe\n" +
+                                "cvtsi2ss xmm0,rax\n" +
+                                "movss xmm1, [M+"+expression2_2Return.address+"]\n" +
+                                "subss xmm0, xmm1\n" +
+                                "movss [M+"+newTemporary+"], xmm0";
                     }
                     else {
-
+                        generatedCode += "mov eax, [M+"+expression1Data.address+"]\n" +
+                                "mov ebx, [M+"+expression2_2Return.address+"]\n" +
+                                "sub eax, ebx\n" +
+                                "mov [M+"+newTemporary+"], eax";
                     }
                 }
                 break;
