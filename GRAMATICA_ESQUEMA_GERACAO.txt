@@ -413,7 +413,42 @@ Expressão2 -> Expressão3_1(14) {(* | && | / | div | mod) Expressão3_2 (15) } 
                 cdqe
                 mov [M+novoTemp], rax
     se Expressão2.operator == &&
+        novoTemp = getNewTemporaryAdd()
+        mov eax, [M+expressão2.end]
+        mov ebx, [M+expressão3_2.end]
+        imul ebx
+        cdqe
+        mov[M+novoTemp], rax
     se Expressão2.operator == /
+        se Expressão2.tipo == real:
+            se Expressão3_2.tipo == real:
+                //mulss
+                movss xmm0, [M+Expressão2.end]
+                movss xmm1, [M+Expressão3_2.end]
+                mulss xmm0, xmm1
+                movss [M+novoTemp], xmm0
+            senão:
+                //converter
+                mov eax, [M+Expressão3_2.end]
+                cdqe
+                cvtsi2ss xmm0,rax
+                movss xmm1, [M+Expressão2.end]
+                mulss xmm0, xmm1
+                movss [M+novoTemp], xmm0
+        senão:
+            se Expressão3_2.tipo == real:
+                mov eax, [M+Expressão2.end]
+                cdqe
+                cvtsi2ss xmm0,rax
+                movss xmm1, [M+Expressão3_2.end]
+                mulss xmm0, xmm1
+                movss [M+novoTemp], xmm0
+            senão:
+                mov eax, [M+Expressão2.end]
+                mov ebx, [M+Expressão3_2.end]
+                imul ebx
+                cdqe
+                mov [M+novoTemp], rax
     se Expressão2.operator == div
     se Expressão2.operator == mod
 

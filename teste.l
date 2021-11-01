@@ -1,2 +1,1 @@
-float x;
-writeln(2*2.5);
+writeln((5<3)&&(3>2));
