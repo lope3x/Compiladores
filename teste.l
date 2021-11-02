@@ -1,1 +1,2 @@
-writeln((2<3) || (3<3));
+string nome <- "Gabriel";
+writeln(nome);

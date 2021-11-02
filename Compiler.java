@@ -895,6 +895,7 @@ class CodeGenerator {
 
         }
         else {
+            String operation = "";
             if(operator == Token.EQUAL){
 
             }
@@ -914,6 +915,7 @@ class CodeGenerator {
 
             }
         }
+        return expressionData;
     }
 }
 
@@ -1358,7 +1360,7 @@ class SyntaxAnalyzer {
             Token operator = relationalOperator();
             ExpressionReturn expression1_2Return = expression1();
             expressionData = semanticAnalyzer.semanticAction10(expressionData, expression1_2Return.type, operator);
-            codeGenerator = codeGenerator.codeGenerate19(operator, expressionData, expression1_2Return);
+            expressionData = codeGenerator.codeGenerate19(operator, expressionData, expression1_2Return);
         }
         return expressionData;
     }
