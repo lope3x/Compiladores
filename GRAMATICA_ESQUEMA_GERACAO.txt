@@ -555,9 +555,42 @@ Done
 Operadores_Relacional -> =  | !=  | < | >  | <=  | >=
 Expressão -> Expressão1_1 (18) [Operadores_Relacional Expressão1_2(19) ] Falta Operações
 
+ga02
+ga05
+
 (19) {
     novoTemp = newTemporary(4)
     se Expressão.type == string:
+        mov rax, M+Expressão.end
+        mov rbx, M+Expressão1_2.end
+        Rot1:
+        mov al, [rax]
+        mov bl, [rbx]
+        cmp al, 0
+        je Rot_Al_eh_0
+        cmp bl, 0
+        je Rot_Bl_eh_0
+        add rax, 1
+        add rbx, 1
+        cmp al, bl
+        je Rot1
+        jmp Rot_False
+        Rot_Al_eh_0:
+        cmp bl, 0
+        je Rot_True
+        jmp Rot_False
+        Rot_Bl_eh_0:
+        cmp al, 0
+        je Rot_True
+        jmp Rot_False
+        Rot_True:
+        mov eax, 1
+        mov [M+NovoTemp], eax
+        jmp Rot_Fim
+        Rot_False:
+        mov eax, 0
+        mov [M+NovoTemp], eax
+        Rot_Fim:
 
     senão:
         se operador: =
@@ -565,13 +598,25 @@ Expressão -> Expressão1_1 (18) [Operadores_Relacional Expressão1_2(19) ] Falt
         se operador: !=
             operação = jne RotTrue
         se operador: <
-            operação = jl RotTrue
+            se Expressão.type == Real || Expressão1_2.type == Real:
+                operação = jb RotTrue
+            senão:
+                operação = jl RotTrue
         se operador: >
-            operação = jg RotTrue
+            se Expressão.type == Real || Expressão1_2.type == Real:
+                operação = ja RotTrue
+            senão:
+                operação = jg RotTrue
         se operador: <=
-            operação = jle RotTrue
+            se Expressão.type == Real || Expressão1_2.type == Real:
+                operação = jbe RotTrue
+            senão:
+                operação = jle RotTrue
         se operador: >=
-            operação = jge RotTrue
+            se Expressão.type == Real || Expressão1_2.type == Real:
+                operação = jae RotTrue
+            senão:
+                operação = jge RotTrue
 
         se Expressão.type == Real:
             se Expressão1_2 == Real:
@@ -579,11 +624,45 @@ Expressão -> Expressão1_1 (18) [Operadores_Relacional Expressão1_2(19) ] Falt
                 movss xmm1, [M+Expressão1_2.end]
                 comiss xmm0, xmm1
                 operação
+                RotFalse://gerar pelo newLabel
+                mov eax, 0
+                mov [M+NovoTemp], eax
+                jmp RotFim
+                RotTrue://gerar pelo newLabel
+                mov eax, 1
+                mov [M+NovoTemp], eax
+                RotFim://gerar pelo newLabel
             senão:
-                //
+                movss xmm0, [M+Expressão.end]
+                mov eax, [M+Expressão1_2.end]
+                cdqe
+                cvtsi2ss xmm1, rax
+                comiss xmm0, xmm1
+                operação
+                RotFalse://gerar pelo newLabel
+                mov eax, 0
+                mov [M+NovoTemp], eax
+                jmp RotFim
+                RotTrue://gerar pelo newLabel
+                mov eax, 1
+                mov [M+NovoTemp], eax
+                RotFim://gerar pelo newLabel
         senão:
             se Expressão1_2 == Real:
-
+                movss xmm0, [M+Expressão1_2.end]
+                mov eax, [M+Expressão.end]
+                cdqe
+                cvtsi2ss xmm1, rax
+                comiss xmm0, xmm1
+                operação
+                RotFalse://gerar pelo newLabel
+                mov eax, 0
+                mov [M+NovoTemp], eax
+                jmp RotFim
+                RotTrue://gerar pelo newLabel
+                mov eax, 1
+                mov [M+NovoTemp], eax
+                RotFim://gerar pelo newLabel
             senão:
                 mov eax, [M+Expressão.end]
                 mov ebx, [M+Expressão1_2.end]

@@ -888,6 +888,33 @@ class CodeGenerator {
 
         return new ExpressionReturn(expressionType, newTemporary, 4);
     }
+
+    public ExpressionReturn codeGenerate19(Token operator, ExpressionReturn expressionData, ExpressionReturn expression1_2Return) {
+        long newTemporary = getNewTemporaryAddress(4);
+        if(expressionData.type == Type.STRING) {
+
+        }
+        else {
+            if(operator == Token.EQUAL){
+
+            }
+            if(operator == Token.NOT_EQUAL){
+
+            }
+            if(operator == Token.LESSER) {
+
+            }
+            if(operator == Token.GREATER) {
+
+            }
+            if(operator == Token.LESSER_OR_EQUAL_THAN) {
+
+            }
+            if(operator == Token.GREATER_OR_EQUAL_THAN) {
+
+            }
+        }
+    }
 }
 
 class ExpressionReturn {
@@ -991,7 +1018,7 @@ class SemanticAnalyzer {
     }
 
     public ExpressionReturn semanticAction10(ExpressionReturn expression1_1Data, Type expression1_2Type, Token operator) throws CompilerError {
-        ExpressionReturn expressionReturn = new ExpressionReturn(Type.BOOLEAN, expression1_1Data.address, 4);
+        ExpressionReturn expressionReturn = new ExpressionReturn(expression1_1Data.type, expression1_1Data.address, 4);
         if((expression1_1Data.type == Type.INTEGER || expression1_1Data.type == Type.REAL) && expression1_2Type == Type.CHARACTER) {
             throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
@@ -1331,6 +1358,7 @@ class SyntaxAnalyzer {
             Token operator = relationalOperator();
             ExpressionReturn expression1_2Return = expression1();
             expressionData = semanticAnalyzer.semanticAction10(expressionData, expression1_2Return.type, operator);
+            codeGenerator = codeGenerator.codeGenerate19(operator, expressionData, expression1_2Return);
         }
         return expressionData;
     }
