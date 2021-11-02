@@ -896,25 +896,44 @@ class CodeGenerator {
         }
         else {
             String operation = "";
+            String trueLabel = getNewLabel();
             if(operator == Token.EQUAL){
+                operation = "je "+
+            }
+            else if(operator == Token.NOT_EQUAL){
 
             }
-            if(operator == Token.NOT_EQUAL){
+            else if(operator == Token.LESSER) {
 
             }
-            if(operator == Token.LESSER) {
+            else if(operator == Token.GREATER) {
 
             }
-            if(operator == Token.GREATER) {
+            else if(operator == Token.LESSER_OR_EQUAL_THAN) {
 
             }
-            if(operator == Token.LESSER_OR_EQUAL_THAN) {
-
-            }
-            if(operator == Token.GREATER_OR_EQUAL_THAN) {
+            else {
 
             }
         }
+
+        if(expressionData.type == Type.REAL) {
+            if(expression1_2Return.type == Type.REAL) {
+
+            }
+            else {
+
+            }
+        }
+        else {
+            if(expression1_2Return.type == Type.REAL) {
+
+            }
+            else {
+
+            }
+        }
+
         return expressionData;
     }
 }
