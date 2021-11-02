@@ -897,8 +897,9 @@ class CodeGenerator {
         else {
             String operation = "";
             String trueLabel = getNewLabel();
+            String falseLabel = getNewLabel();
             if(operator == Token.EQUAL){
-                operation = "je "+
+                operation = "je "+trueLabel
             }
             else if(operator == Token.NOT_EQUAL){
 
