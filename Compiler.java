@@ -898,6 +898,7 @@ class CodeGenerator {
             String operation = "";
             String trueLabel = getNewLabel();
             String falseLabel = getNewLabel();
+            String endLabel = getNewLabel();
             if(operator == Token.EQUAL){
                 operation = "je "+trueLabel+"\n";
             }
@@ -939,9 +940,34 @@ class CodeGenerator {
 
             if(expressionData.type == Type.REAL) {
                 if(expression1_2Return.type == Type.REAL) {
-
+                    generatedCode += "movss xmm0, [M+"+expressionData.address+"]\n" +
+                            "movss xmm1, [M+"+expression1_2Return.address+"]\n" +
+                            "comiss xmm0, xmm1\n" +
+                            ""+operation+"\n" +
+                            ""+falseLabel+":\n" +
+                            "mov eax, 0\n" +
+                            "mov [M+"+newTemporary+"], eax\n" +
+                            "jmp "+endLabel+"\n" +
+                            ""+trueLabel+":\n" +
+                            "mov eax, 1\n" +
+                            "mov [M+NovoTemp], eax\n" +
+                            ""+endLabel+":\n";
                 }
                 else {
+                    generatedCode += "movss xmm0, [M+"+expressionData.address+"]\n" +
+                            "mov eax, [M+"+expression1_2Return.address+"]\n" +
+                            "cdqe\n" +
+                            "cvtsi2ss xmm1, rax\n" +
+                            "comiss xmm0, xmm1\n" +
+                            ""+operation+"\n" +
+                            ""+falseLabel+":\n" +
+                            "mov eax, 0\n" +
+                            "mov [M+"+newTemporary+"], eax\n" +
+                            "jmp "+endLabel+"\n" +
+                            ""+trueLabel+":\n" +
+                            "mov eax, 1\n" +
+                            "mov [M+NovoTemp], eax\n" +
+                            ""+endLabel+":\n";
 
                 }
             }
@@ -959,6 +985,7 @@ class CodeGenerator {
 
         return expressionData;
     }
+
 }
 
 class ExpressionReturn {
@@ -1062,7 +1089,7 @@ class SemanticAnalyzer {
     }
 
     public ExpressionReturn semanticAction10(ExpressionReturn expression1_1Data, Type expression1_2Type, Token operator) throws CompilerError {
-        ExpressionReturn expressionReturn = new ExpressionReturn(expression1_1Data.type, expression1_1Data.address, 4);
+        ExpressionReturn expressionReturn = new ExpressionReturn(Type.BOOLEAN, expression1_1Data.address, 4);
         if((expression1_1Data.type == Type.INTEGER || expression1_1Data.type == Type.REAL) && expression1_2Type == Type.CHARACTER) {
             throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
@@ -1140,7 +1167,7 @@ class SemanticAnalyzer {
         }
         return new ExpressionReturn(expressionType, expression2Data.address, expression2Data.size);
     }
-    
+
 
     public ExpressionReturn semanticAction30(boolean expression3HasExclamationOperator, ExpressionReturn expression4Return, boolean shouldNegateExpression) throws CompilerError {
         if (expression3HasExclamationOperator && (expression4Return.type != Type.BOOLEAN)){
@@ -1402,7 +1429,6 @@ class SyntaxAnalyzer {
             Token operator = relationalOperator();
             ExpressionReturn expression1_2Return = expression1();
             expressionData = semanticAnalyzer.semanticAction10(expressionData, expression1_2Return.type, operator);
-            expressionData = codeGenerator.codeGenerate19(operator, expressionData, expression1_2Return);
         }
         return expressionData;
     }
