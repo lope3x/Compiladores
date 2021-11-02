@@ -50,15 +50,15 @@ enum Token {
     LEFT_SQUARE_BRACKET("["),
     RIGHT_SQUARE_BRACKET("]"),
     CONST("const"),
-        EOF(null),
-                CONST_VALUE(null),
-                ID(null);
+    EOF(null),
+    CONST_VALUE(null),
+    ID(null);
 
-        public final String name;
+    public final String name;
 
-        Token(String name) {
-        this.name = name;
-    }
+    Token(String name) {
+    this.name = name;
+}
 }
 
 /**
@@ -898,36 +898,36 @@ class CodeGenerator {
             String endLabel = getNewLabel();
             String trueLabel = getNewLabel();
             String falseLabel = getNewLabel();
-            generatedCode+="mov rax, M+"+expressionData.address+"\n" +
-                    "mov rbx, M+"+expression1_2Return.address+"\n+" +
-                    labelLoop+":\n"+
-                    "mov al, [rax]\n" +
-                    "mov bl, [rbx]\n" +
+            generatedCode+="mov rsi, M+"+expressionData.address+"\n" +
+                    "mov rdi, M+"+expression1_2Return.address+"\n" +
+                    labelLoop+":;Label Loop\n"+
+                    "mov al, [rsi]\n" +
+                    "mov bl, [rdi]\n" +
                     "cmp al, 0\n" +
-                    "je "+labelAlis0+"\n" +
+                    "je "+labelAlis0+"; Al eh 0\n" +
                     "cmp bl, 0\n" +
-                    "je "+labelBlis0+"\n" +
-                    "add rax, 1\n" +
-                    "add rbx, 1\n" +
+                    "je "+labelBlis0+"; Bl eh 0\n" +
+                    "add rsi, 1\n" +
+                    "add rdi, 1\n" +
                     "cmp al, bl\n" +
-                    "je +"+labelLoop+"\n" +
-                    "jmp "+falseLabel+"\n" +
-                    labelAlis0+":\n"+
+                    "je "+labelLoop+"; Label Loop\n" +
+                    "jmp "+falseLabel+"; RotFalse\n" +
+                    labelAlis0+": ; Al eh 0\n"+
                     "cmp bl, 0\n" +
-                    "je "+trueLabel+"\n"+
-                    "jmp "+falseLabel+"\n"+
-                    labelBlis0+":\n" +
+                    "je "+trueLabel+"; Rot True\n"+
+                    "jmp "+falseLabel+"; Rot false\n"+
+                    labelBlis0+":; bl eh 0\n" +
                     "cmp al, 0\n" +
-                    "je "+trueLabel+"\n" +
-                    "jmp "+falseLabel+"\n" +
-                    trueLabel+":\n" +
+                    "je "+trueLabel+"; Rot True\n" +
+                    "jmp "+falseLabel+"; Rot False\n" +
+                    trueLabel+":; Rot True\n" +
                     "mov eax, 1\n" +
                     "mov [M+"+newTemporary+"], eax\n" +
-                    "jmp "+endLabel+"\n" +
-                    falseLabel+":\n" +
+                    "jmp "+endLabel+"; Rot Fim\n" +
+                    falseLabel+":; Rot False\n" +
                     "mov eax, 0\n" +
                     "mov [M+"+newTemporary+"], eax\n" +
-                    endLabel+":\n";
+                    endLabel+": ; Rot fim\n";
         }
         else {
             String operation = "";
@@ -985,7 +985,7 @@ class CodeGenerator {
                             "jmp "+endLabel+"\n" +
                             ""+trueLabel+":\n" +
                             "mov eax, 1\n" +
-                            "mov [M+NovoTemp], eax\n" +
+                            "mov [M+"+newTemporary+"], eax\n" +
                             ""+endLabel+":\n";
                 }
                 else {
@@ -1001,7 +1001,7 @@ class CodeGenerator {
                             "jmp "+endLabel+"\n" +
                             ""+trueLabel+":\n" +
                             "mov eax, 1\n" +
-                            "mov [M+NovoTemp], eax\n" +
+                            "mov [M+"+newTemporary+"], eax\n" +
                             ""+endLabel+":\n";
 
                 }
@@ -1012,7 +1012,7 @@ class CodeGenerator {
                             "mov eax, [M+"+expressionData.address+"]\n" +
                             "cdqe\n" +
                             "cvtsi2ss xmm1, rax\n" +
-                            "comiss xmm0, xmm1\n" +
+                            "comiss xmm1, xmm0\n" +
                             operation +
                             falseLabel+":\n" +
                             "mov eax, 0\n" +
@@ -1040,9 +1040,7 @@ class CodeGenerator {
             }
         }
 
-
-
-        return expressionData;
+        return new ExpressionReturn(Type.BOOLEAN, newTemporary, 4);
     }
 
 }
@@ -1148,7 +1146,7 @@ class SemanticAnalyzer {
     }
 
     public ExpressionReturn semanticAction10(ExpressionReturn expression1_1Data, Type expression1_2Type, Token operator) throws CompilerError {
-        ExpressionReturn expressionReturn = new ExpressionReturn(Type.BOOLEAN, expression1_1Data.address, 4);
+        ExpressionReturn expressionReturn = new ExpressionReturn(expression1_1Data.type, expression1_1Data.address, 4);
         if((expression1_1Data.type == Type.INTEGER || expression1_1Data.type == Type.REAL) && expression1_2Type == Type.CHARACTER) {
             throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
@@ -1488,6 +1486,7 @@ class SyntaxAnalyzer {
             Token operator = relationalOperator();
             ExpressionReturn expression1_2Return = expression1();
             expressionData = semanticAnalyzer.semanticAction10(expressionData, expression1_2Return.type, operator);
+            expressionData = codeGenerator.codeGenerate19(operator, expressionData, expression1_2Return);
         }
         return expressionData;
     }
@@ -1573,8 +1572,7 @@ class SyntaxAnalyzer {
         }
 
         ExpressionReturn expression4Return = expression4();
-
-        return semanticAnalyzer.semanticAction30(hasExclamationOperator, expression4Return, (numberOfNegation % 2 == 0) && hasExclamationOperator );
+        return semanticAnalyzer.semanticAction30(hasExclamationOperator, expression4Return, numberOfNegation % 2 == 1);
     }
 
     /**

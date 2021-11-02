@@ -11,7 +11,7 @@ Comando -> id  ["["Expressão"]"] <- Expressão  ; |
 Repetição -> while Expressão  Bloco_ou_Comando
 Teste -> if Expressão  Bloco_ou_Comando [else Bloco_ou_Comando]
 Operadores_Relacional -> =  | !=  | < | >  | <=  | >=
-Expressão -> Expressão1_1 (18) [Operadores_Relacional Expressão1_2(19) ] Falta Operações
+Expressão -> Expressão1_1 (18) [Operadores_Relacional Expressão1_2(19) ] OK
 Expressão1 -> [-] Expressão2_1(16)  {(-  | +  | ||  )  Expressão2_2 (17)} OK
 Expressão2 -> Expressão3_1(14) {(* | && | / | div | mod) Expressão3_2 (15) } OK
 Expressão3 -> {!} Expressão4 (13) OK
@@ -559,6 +559,9 @@ ga02
 ga05
 
 (19) {
+a0
+aa0
+
     novoTemp = newTemporary(4)
     se Expressão.type == string:
         mov rax, M+Expressão.end
@@ -653,7 +656,7 @@ ga05
                 mov eax, [M+Expressão.end]
                 cdqe
                 cvtsi2ss xmm1, rax
-                comiss xmm0, xmm1
+                comiss xmm1, xmm0
                 operação
                 RotFalse://gerar pelo newLabel
                 mov eax, 0
