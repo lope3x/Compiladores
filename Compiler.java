@@ -899,41 +899,63 @@ class CodeGenerator {
             String trueLabel = getNewLabel();
             String falseLabel = getNewLabel();
             if(operator == Token.EQUAL){
-                operation = "je "+trueLabel
+                operation = "je "+trueLabel+"\n";
             }
             else if(operator == Token.NOT_EQUAL){
-
+                operation = "jne "+trueLabel+"\n";
             }
             else if(operator == Token.LESSER) {
-
+                if(expressionData.type == Type.REAL || expression1_2Return.type == Type.REAL) {
+                    operation = "jb "+trueLabel+"\n";
+                }
+                else {
+                    operation = "jne "+trueLabel+"\n";
+                }
             }
             else if(operator == Token.GREATER) {
-
+                if(expressionData.type == Type.REAL || expression1_2Return.type == Type.REAL) {
+                    operation = "jne "+trueLabel+"\n";
+                }
+                else {
+                    operation = "jne "+trueLabel+"\n";
+                }
             }
             else if(operator == Token.LESSER_OR_EQUAL_THAN) {
-
+                if(expressionData.type == Type.REAL || expression1_2Return.type == Type.REAL) {
+                    operation = "jne "+trueLabel+"\n";
+                }
+                else {
+                    operation = "jne "+trueLabel+"\n";
+                }
             }
             else {
+                if(expressionData.type == Type.REAL || expression1_2Return.type == Type.REAL) {
+                    operation = "jne "+trueLabel+"\n";
+                }
+                else {
+                    operation = "jne "+trueLabel+"\n";
+                }
+            }
 
+            if(expressionData.type == Type.REAL) {
+                if(expression1_2Return.type == Type.REAL) {
+
+                }
+                else {
+
+                }
+            }
+            else {
+                if(expression1_2Return.type == Type.REAL) {
+
+                }
+                else {
+
+                }
             }
         }
 
-        if(expressionData.type == Type.REAL) {
-            if(expression1_2Return.type == Type.REAL) {
 
-            }
-            else {
-
-            }
-        }
-        else {
-            if(expression1_2Return.type == Type.REAL) {
-
-            }
-            else {
-
-            }
-        }
 
         return expressionData;
     }
