@@ -892,7 +892,42 @@ class CodeGenerator {
     public ExpressionReturn codeGenerate19(Token operator, ExpressionReturn expressionData, ExpressionReturn expression1_2Return) {
         long newTemporary = getNewTemporaryAddress(4);
         if(expressionData.type == Type.STRING) {
-
+            String labelLoop = getNewLabel();
+            String labelAlis0 = getNewLabel();
+            String labelBlis0 = getNewLabel();
+            String endLabel = getNewLabel();
+            String trueLabel = getNewLabel();
+            String falseLabel = getNewLabel();
+            generatedCode+="mov rax, M+"+expressionData.address+"\n" +
+                    "mov rbx, M+"+expression1_2Return.address+"\n+" +
+                    labelLoop+":\n"+
+                    "mov al, [rax]\n" +
+                    "mov bl, [rbx]\n" +
+                    "cmp al, 0\n" +
+                    "je "+labelAlis0+"\n" +
+                    "cmp bl, 0\n" +
+                    "je "+labelBlis0+"\n" +
+                    "add rax, 1\n" +
+                    "add rbx, 1\n" +
+                    "cmp al, bl\n" +
+                    "je +"+labelLoop+"\n" +
+                    "jmp "+falseLabel+"\n" +
+                    labelAlis0+":\n"+
+                    "cmp bl, 0\n" +
+                    "je "+trueLabel+"\n"+
+                    "jmp "+falseLabel+"\n"+
+                    labelBlis0+":\n" +
+                    "cmp al, 0\n" +
+                    "je "+trueLabel+"\n" +
+                    "jmp "+falseLabel+"\n" +
+                    trueLabel+":\n" +
+                    "mov eax, 1\n" +
+                    "mov [M+"+newTemporary+"], eax\n" +
+                    "jmp "+endLabel+"\n" +
+                    falseLabel+":\n" +
+                    "mov eax, 0\n" +
+                    "mov [M+"+newTemporary+"], eax\n" +
+                    endLabel+":\n";
         }
         else {
             String operation = "";
@@ -910,31 +945,31 @@ class CodeGenerator {
                     operation = "jb "+trueLabel+"\n";
                 }
                 else {
-                    operation = "jne "+trueLabel+"\n";
+                    operation = "jl "+trueLabel+"\n";
                 }
             }
             else if(operator == Token.GREATER) {
                 if(expressionData.type == Type.REAL || expression1_2Return.type == Type.REAL) {
-                    operation = "jne "+trueLabel+"\n";
+                    operation = "ja "+trueLabel+"\n";
                 }
                 else {
-                    operation = "jne "+trueLabel+"\n";
+                    operation = "jg "+trueLabel+"\n";
                 }
             }
             else if(operator == Token.LESSER_OR_EQUAL_THAN) {
                 if(expressionData.type == Type.REAL || expression1_2Return.type == Type.REAL) {
-                    operation = "jne "+trueLabel+"\n";
+                    operation = "jbe "+trueLabel+"\n";
                 }
                 else {
-                    operation = "jne "+trueLabel+"\n";
+                    operation = "jle "+trueLabel+"\n";
                 }
             }
             else {
                 if(expressionData.type == Type.REAL || expression1_2Return.type == Type.REAL) {
-                    operation = "jne "+trueLabel+"\n";
+                    operation = "jae "+trueLabel+"\n";
                 }
                 else {
-                    operation = "jne "+trueLabel+"\n";
+                    operation = "jge "+trueLabel+"\n";
                 }
             }
 
