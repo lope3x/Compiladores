@@ -898,6 +898,7 @@ class CodeGenerator {
             String operation = "";
             String trueLabel = getNewLabel();
             String falseLabel = getNewLabel();
+            String endLabel = getNewLabel();
             if(operator == Token.EQUAL){
                 operation = "je "+trueLabel+"\n";
             }
@@ -947,10 +948,34 @@ class CodeGenerator {
             }
             else {
                 if(expression1_2Return.type == Type.REAL) {
-
+                    generatedCode += "movss xmm0, [M+"+expression1_2Return.address+"]\n" +
+                            "mov eax, [M+"+expressionData.address+"]\n" +
+                            "cdqe\n" +
+                            "cvtsi2ss xmm1, rax\n" +
+                            "comiss xmm0, xmm1\n" +
+                            operation +
+                            falseLabel+":\n" +
+                            "mov eax, 0\n" +
+                            "mov [M+"+newTemporary+"], eax\n" +
+                            "jmp "+endLabel+"\n" +
+                            trueLabel+":\n" +
+                            "mov eax, 1\n" +
+                            "mov [M+"+newTemporary+"], eax\n" +
+                            endLabel +":\n";
                 }
                 else {
-
+                    generatedCode += "mov eax, [M+"+expressionData.address+"]\n" +
+                            "mov ebx, [M+"+expression1_2Return.address+"]\n" +
+                            "cmp eax, ebx\n" +
+                            operation +
+                            falseLabel+":\n" +
+                            "mov eax, 0\n" +
+                            "mov [M+"+newTemporary+"], eax\n" +
+                            "jmp "+endLabel+"\n" +
+                            trueLabel+":\n" +
+                            "mov eax, 1\n" +
+                            "mov [M+"+newTemporary+"], eax\n" +
+                            endLabel +":\n";
                 }
             }
         }
