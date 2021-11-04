@@ -5,7 +5,7 @@ Tipo -> int (39) | float (40) | string (41) | char (42)
 Declaração -> Tipo (3) Declaração_Init {, Declaração_Init} | const id = [-(47)] const_value (1)
 Declaração_Init ->  id (2) [<- [-(45)] const_value (46) ]
 Escrita -> "("Expressão {, Expressão} ")"
-Comando -> id (5) ["["Expressão"]"(6)] <- Expressão (7) ; | Repetição | Teste | ; | readln"("id (5) ")" ; | (write| writeln) Escrita ;
+Comando -> id (5) ["["Expressão_1"]"(6)] <- Expressão_2 (7) ; | Repetição | Teste | ; | readln"("id (5) ")" ; | (write| writeln) Escrita ;
 Repetição -> while Expressão (8) Bloco_ou_Comando
 Teste -> if Expressão (8) Bloco_ou_Comando [else Bloco_ou_Comando]
 Operadores_Relacional -> = (11) | != (12) | < (13)| > (14) | <= (15) | >= (16)

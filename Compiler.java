@@ -1043,6 +1043,20 @@ class CodeGenerator {
         return new ExpressionReturn(Type.BOOLEAN, newTemporary, 4);
     }
 
+    public void codeGenerate20(LexicalRegister id, ExpressionReturn expression1Return, ExpressionReturn expression2Return) {
+        switch (id.constType) {
+            case STRING:
+                break;
+            case FLOAT:
+                break;
+            case INT:
+                break;
+            case CHAR:
+
+                break;
+        }
+    }
+
 }
 
 class ExpressionReturn {
@@ -1429,19 +1443,21 @@ class SyntaxAnalyzer {
         boolean hasStringAccess = false;
         Token currentToken = currentRegister.symbol.tokenType;
         if(currentToken == Token.ID){
+            ExpressionReturn expression1Return;
             LexicalRegister id = currentRegister;
             matchToken(Token.ID);
             semanticAnalyzer.semanticAction5(id);
             if (currentRegister.symbol.tokenType != Token.ATTRIBUTION) {
                 matchToken(Token.LEFT_SQUARE_BRACKET);
-                ExpressionReturn expressionReturn = expression();
+                expression1Return = expression();
                 matchToken(Token.RIGHT_SQUARE_BRACKET);
-                semanticAnalyzer.semanticAction6(id.symbol.idType, expressionReturn.type);//Ação 6
+                semanticAnalyzer.semanticAction6(id.symbol.idType, expression1Return.type);//Ação 6
                 hasStringAccess = true;
             }
             matchToken(Token.ATTRIBUTION);
-            ExpressionReturn expressionReturn = expression();
-            semanticAnalyzer.semanticAction7(hasStringAccess, expressionReturn.type, id.symbol.idType);//Ação 7
+            ExpressionReturn expression2Return = expression();
+            semanticAnalyzer.semanticAction7(hasStringAccess, expression2Return.type, id.symbol.idType);//Ação 7
+            codeGenerator.codeGenerate20(id, expression1Return, expression2Return);
             matchToken(Token.SEMICOLON);
         }
         else if(currentToken == Token.WHILE){

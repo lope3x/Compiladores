@@ -680,3 +680,44 @@ aa0
                 mov [M+NovoTemp], eax
                 RotFim://gerar pelo newLabel
 }
+
+id  ["["Expressão_1"]"] <- Expressão_2 (20) ; |
+
+(20) {
+    se id.type == string:
+        se Expressão_2.end == char:
+            mov eax, [M+Expressão_1.end]
+            cdqe
+            mov rsi, M+id.end
+            add rsi, rax
+            mov al, [M+Expressão_2.end]
+            mov [rax], al
+        senão:
+            //então Expressão_2 é uma string
+            mov rdi, M+id.end
+            mov rsi, M+Expressão_2.end
+            Rot1:
+            mov al, [rsi]
+            mov [rdi], al
+            add rdi, 1
+            add rsi, 1
+            cmp al, 0
+            jne Rot1
+            id.size = Expressão_2.size
+    se id.type == float:
+        se Expressão_2.end == inteiro:
+            mov eax, [M+Expressão_2.end]
+            cdqe
+            ctvsi2ss xmm0, rax
+            movss [id.end], xmm0
+        senão:
+            //então Expressão_2 é float
+            movss xmm0, [M+Expressão_2.end]
+            movss [M+id.end], xmm0
+    se id.type == int:
+        mov eax, [M+Expressão_2.end]
+        mov [M+id.end], eax
+    se id.type == char:
+        mov al, [M+Expressão_2.end]
+        mov [M+id.end], al
+}
