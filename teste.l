@@ -1,2 +1,3 @@
-string nome <- "Gabriel";
-writeln(nome);
+float x<-5;
+x<-6;
+writeln(x);

@@ -527,6 +527,10 @@ class CodeGenerator {
                     lexeme +="-"+constvalue.symbol.lexeme;
                 else
                     lexeme = constvalue.symbol.lexeme;
+
+                if(constType == Type.INTEGER && id.symbol.idType == Type.REAL) {
+                    lexeme+=".0";
+                }
                 generatedCode+="section .data\n"+
                         "dd "+lexeme+" ;"+dataCount+ "\n"+
                         "section .text\n";
@@ -1044,15 +1048,61 @@ class CodeGenerator {
     }
 
     public void codeGenerate20(LexicalRegister id, ExpressionReturn expression1Return, ExpressionReturn expression2Return) {
-        switch (id.constType) {
+        switch (id.symbol.idType) {
             case STRING:
+                if(expression2Return.type == Type.CHARACTER){
+                    generatedCode+="mov eax, [M+"+expression1Return.address+"]\n" +
+                            "cdqe\n" +
+                            "mov rsi, M+"+id.symbol.address+"\n" +
+                            "add rsi, rax\n" +
+                            "mov bl, [M+"+expression2Return.address+"]\n" +
+                            "mov [rsi], bl\n";
+                }
+                else {
+                    String label0 = getNewLabel();
+                    String label1 = getNewLabel();
+                    generatedCode+="mov rdi, M+"+id.symbol.address+"\n" +
+                            "mov ebx, 0\n" +
+                            "mov al, 0\n" +
+                            label0+":\n"+
+                            "mov [rdi], al\n" +
+                            "add rdi, 1\n" +
+                            "add ebx, 1\n" +
+                            "cmp ebx, 255\n" +
+                            "jne "+label0+"\n"+
+                            "mov rdi, M+"+id.symbol.address+"\n" +
+                            "mov rsi, M+"+expression2Return.address+"\n" +
+                            label1+":\n"+
+                            "mov al, [rsi]\n" +
+                            "mov [rdi], al\n" +
+                            "add rdi, 1\n" +
+                            "add rsi, 1\n" +
+                            "cmp al, 0\n" +
+                            "jne "+label1+"\n" +
+                            "mov al, 0 \n" +
+                            "mov [rdi], al\n";
+                    id.symbol.size = expression2Return.size;
+                }
                 break;
-            case FLOAT:
+            case REAL:
+                if(expression2Return.type == Type.INTEGER) {
+                    generatedCode+="mov eax, [M+"+expression2Return.address+"]\n" +
+                            "cdqe\n" +
+                            "cvtsi2ss xmm0, rax\n" +
+                            "movss [M+"+id.symbol.address+"], xmm0\n";
+                }
+                else {
+                    generatedCode+="movss xmm0, [M+"+expression2Return.address+"]\n" +
+                            "movss [M+"+id.symbol.address+"], xmm0\n";
+                }
                 break;
-            case INT:
+            case INTEGER:
+                generatedCode+="mov eax, [M+"+expression2Return.address+"]\n" +
+                        "mov [M+"+id.symbol.address+"], eax\n";
                 break;
-            case CHAR:
-
+            case CHARACTER:
+                generatedCode+="mov al, [M+"+expression2Return.address+"]\n" +
+                        "mov [M+"+id.symbol.address+"], al\n";
                 break;
         }
     }
@@ -1268,7 +1318,11 @@ class SemanticAnalyzer {
         if((declarationInitType != Type.INTEGER && declarationInitType != Type.REAL) && isNegative) {
             throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
-        if(declarationInitType != constValueType) {
+        if(declarationInitType == Type.REAL) {
+            if(constValueType != Type.INTEGER && constValueType != Type.REAL){
+                throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
+            }
+        } else if(declarationInitType != constValueType) {
             throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
     }
@@ -1443,7 +1497,7 @@ class SyntaxAnalyzer {
         boolean hasStringAccess = false;
         Token currentToken = currentRegister.symbol.tokenType;
         if(currentToken == Token.ID){
-            ExpressionReturn expression1Return;
+            ExpressionReturn expression1Return = null;
             LexicalRegister id = currentRegister;
             matchToken(Token.ID);
             semanticAnalyzer.semanticAction5(id);

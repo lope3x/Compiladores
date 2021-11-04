@@ -5,7 +5,7 @@ Tipo -> int  | float  | string  | char
 Declaração -> Tipo  Declaração_Init {, Declaração_Init} | const id = [-] const_value (5) OK
 Declaração_Init ->  id  [<- [-] const_value (5)] (6) OK
 Escrita -> "("Expressão(3) {, Expressão(3)} ")"(4)
-Comando -> id  ["["Expressão"]"] <- Expressão  ; |
+Comando -> id  ["["Expressão_1"]"] <- Expressão_2 (20) ; | OK
         Repetição | Teste | ; | readln"("id  ")" ; |
         (write (1) | writeln (2)) Escrita ; OK
 Repetição -> while Expressão  Bloco_ou_Comando
@@ -681,19 +681,28 @@ aa0
                 RotFim://gerar pelo newLabel
 }
 
-id  ["["Expressão_1"]"] <- Expressão_2 (20) ; |
+
 
 (20) {
     se id.type == string:
-        se Expressão_2.end == char:
+        se Expressão_2.type == char:
             mov eax, [M+Expressão_1.end]
             cdqe
             mov rsi, M+id.end
             add rsi, rax
-            mov al, [M+Expressão_2.end]
-            mov [rax], al
+            mov bl, [M+Expressão_2.end]
+            mov [rsi], bl
         senão:
             //então Expressão_2 é uma string
+            mov rdi, M+id.end
+            mov ebx, 0
+            Rot0:
+            mov al, 0
+            mov [rdi], al
+            add rdi, 1
+            add ebx, 1
+            cmp ebx, 255
+            jne Rot0
             mov rdi, M+id.end
             mov rsi, M+Expressão_2.end
             Rot1:
@@ -703,13 +712,15 @@ id  ["["Expressão_1"]"] <- Expressão_2 (20) ; |
             add rsi, 1
             cmp al, 0
             jne Rot1
+            mov al, 0
+            mov [rdi], al
             id.size = Expressão_2.size
     se id.type == float:
-        se Expressão_2.end == inteiro:
+        se Expressão_2.type == inteiro:
             mov eax, [M+Expressão_2.end]
             cdqe
-            ctvsi2ss xmm0, rax
-            movss [id.end], xmm0
+            cvtsi2ss xmm0, rax
+            movss [M+id.end], xmm0
         senão:
             //então Expressão_2 é float
             movss xmm0, [M+Expressão_2.end]
@@ -721,3 +732,6 @@ id  ["["Expressão_1"]"] <- Expressão_2 (20) ; |
         mov al, [M+Expressão_2.end]
         mov [M+id.end], al
 }
+
+Repetição -> while Expressão  Bloco_ou_Comando
+
