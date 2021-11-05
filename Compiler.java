@@ -1107,6 +1107,128 @@ class CodeGenerator {
         }
     }
 
+    public void codeGenerate21(String labelStartWhile) {
+        generatedCode+=labelStartWhile+":\n";
+    }
+
+    public void codeGenerate22(String labelEndWhile, ExpressionReturn expressionReturn) {
+        generatedCode+="mov eax, [M+"+expressionReturn.address+"]\n" +
+                "cmp eax, 1\n" +
+                "jne "+labelEndWhile+"\n";
+    }
+
+    public void codeGenerate23(String labelStartWhile, String labelEndWhile) {
+        generatedCode+="jmp "+ labelStartWhile+"\n" +
+                labelEndWhile+":\n";
+    }
+
+    public void codeGenerate24(ExpressionReturn expressionReturn, String labelElse) {
+        generatedCode+="mov eax, [M+"+expressionReturn.address+"]\n" +
+                "cmp eax, 1\n" +
+                "jne "+labelElse+"\n";
+    }
+
+    public void codeGenerate25(String labelElse, String labelEnd){
+        generatedCode+="jmp "+labelEnd+"\n" +
+                labelElse+":\n";
+    }
+
+    public void codeGenerate26(String labelEnd) {
+        generatedCode+=labelEnd+":\n";
+    }
+
+    public void codeGenerate27(LexicalRegister id) {
+        switch (id.symbol.idType) {
+            case STRING:
+                long newTemporary = getNewTemporaryAddress(256);
+                String label0 = getNewLabel();
+                String label1 = getNewLabel();
+                generatedCode+="mov rsi, M+"+newTemporary+"\n" +
+                        "mov rdx, 100h ;tamanho do buffer\n" +
+                        "mov rax, 0 ;chamada para leitura\n" +
+                        "mov rdi, 0 ;leitura do teclado\n" +
+                        "syscall\n" +
+                        "mov rsi, M+"+newTemporary+"\n" +
+                        "mov rdi, M+"+id.symbol.address+"\n" +
+                        "mov ebx, 0\n" +
+                        label0+":\n" +
+                        "mov al, 0\n" +
+                        "mov [rdi], al\n" +
+                        "add rdi, 1\n" +
+                        "add ebx, 1\n" +
+                        "cmp ebx, 255\n" +
+                        "jne "+ label0 +"\n" +
+                        "mov rdi, M+"+id.symbol.address+"\n" +
+                        label1+":\n" +
+                        "mov al, [rsi]\n" +
+                        "mov [rdi], al\n" +
+                        "add rdi, 1\n" +
+                        "add rsi, 1\n" +
+                        "cmp al, 10\n" +
+                        "jne "+ label1 +"\n" +
+                        "sub rdi, 1\n" +
+                        "mov al, 0\n" +
+                        "mov [rdi], al\n";
+                break;
+            case REAL:
+
+                break;
+            case CHARACTER:
+                newTemporary = getNewTemporaryAddress(1);
+                generatedCode+="mov rsi, M+"+newTemporary+"\n" +
+                        "mov rdx, 100h ;tamanho do buffer\n" +
+                        "mov rax, 0 ;chamada para leitura\n" +
+                        "mov rdi, 0 ;leitura do teclado\n" +
+                        "syscall\n" +
+                        "mov rsi, M+"+newTemporary+"\n" +
+                        "mov al, [rsi]\n" +
+                        "mov [M+"+id.symbol.address+"], al\n";
+                break;
+            case INTEGER:
+                label0 = getNewLabel();
+                label1 = getNewLabel();
+                String label2 = getNewLabel();
+                String label3 = getNewLabel();
+                newTemporary = getNewTemporaryAddress(12);
+                generatedCode+="mov rsi, M+"+newTemporary+"\n" +
+                        "mov rdx, 0Ch ;tamanho do buffer\n" +
+                        "mov rax, 0 ;chamada para leitura\n" +
+                        "mov rdi, 0 ;leitura do teclado\n" +
+                        "syscall\n" +
+                        "mov eax, 0 ;acumulador\n" +
+                        "mov ebx, 0 ;caractere\n" +
+                        "mov ecx, 10 ;base 10\n" +
+                        "mov dx, 1 ;sinal\n" +
+                        "mov rsi, M+"+newTemporary+";end. buffer\n" +
+                        "mov bl, [rsi] ;carrega caractere\n" +
+                        "cmp bl, '-' ;sinal - ?\n" +
+                        "jne "+label0+"\n" +
+                        "mov dx, -1 ;senão, armazena -\n" +
+                        "add rsi, 1 ;inc. ponteiro string\n" +
+                        "mov bl, [rsi] ;carrega caractere\n" +
+                        label0+":\n" +
+                        "push dx ;empilha sinal\n" +
+                        "mov edx, 0 ;reg. multiplicação\n" +
+                        label1+":\n" +
+                        "cmp bl, 0Ah ;verifica fim string\n" +
+                        "je "+label2+"; \n" +
+                        "imul ecx ;mult. eax por 10\n" +
+                        "sub bl, '0' ;converte caractere\n" +
+                        "add eax, ebx ;soma valor caractere\n" +
+                        "add rsi, 1 ;incrementa base\n" +
+                        "mov bl, [rsi] ;carrega caractere\n" +
+                        "jmp "+label1+"\n" +
+                        label2+":\n" +
+                        "pop cx ;desempilha sinal\n" +
+                        "cmp cx, 0\n" +
+                        "jg "+label3+"\n" +
+                        "neg eax ;mult. sinal\n" +
+                        label3+":\n" +
+                        "mov [M+"+id.symbol.address+"], eax\n";
+                break;
+        }
+    }
+
 }
 
 class ExpressionReturn {
@@ -1530,6 +1652,7 @@ class SyntaxAnalyzer {
             matchToken(Token.ID);
             semanticAnalyzer.semanticAction5(id);
             matchToken(Token.CLOSE_PARENTESIS);
+            codeGenerator.codeGenerate27(id);
             matchToken(Token.SEMICOLON);
         }
         else {
@@ -1728,10 +1851,15 @@ class SyntaxAnalyzer {
      * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
      */
     private void repetition() throws CompilerError {
+        String labelStartWhile = codeGenerator.getNewLabel();
+        String labelEndWhile = codeGenerator.getNewLabel();
         matchToken(Token.WHILE);
+        codeGenerator.codeGenerate21(labelStartWhile);
         ExpressionReturn expressionReturn = expression();
         semanticAnalyzer.semanticAction8(expressionReturn.type);
+        codeGenerator.codeGenerate22(labelEndWhile, expressionReturn);
         blockOrCommand();
+        codeGenerator.codeGenerate23(labelStartWhile, labelEndWhile);
     }
 
     /**
@@ -1739,14 +1867,19 @@ class SyntaxAnalyzer {
      * @throws CompilerError Erro de compilação, pode ser um error léxico ou sintático.
      */
     private void test() throws CompilerError {
+        String labelElse = codeGenerator.getNewLabel();
+        String labelEnd = codeGenerator.getNewLabel();
         matchToken(Token.IF);
         ExpressionReturn expressionReturn = expression();
         semanticAnalyzer.semanticAction8(expressionReturn.type);
+        codeGenerator.codeGenerate24(expressionReturn, labelElse);
         blockOrCommand();
+        codeGenerator.codeGenerate25(labelElse, labelEnd);
         if(currentRegister.symbol.tokenType == Token.ELSE) {
             matchToken(Token.ELSE);
             blockOrCommand();
         }
+        codeGenerator.codeGenerate26(labelEnd);
     }
 
     /**

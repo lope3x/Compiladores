@@ -6,10 +6,11 @@ Declaração -> Tipo  Declaração_Init {, Declaração_Init} | const id = [-] c
 Declaração_Init ->  id  [<- [-] const_value (5)] (6) OK
 Escrita -> "("Expressão(3) {, Expressão(3)} ")"(4)
 Comando -> id  ["["Expressão_1"]"] <- Expressão_2 (20) ; | OK
-        Repetição | Teste | ; | readln"("id  ")" ; |
+        Repetição | Teste | ; |
+        readln"("id  ")" ; |
         (write (1) | writeln (2)) Escrita ; OK
-Repetição -> while Expressão  Bloco_ou_Comando
-Teste -> if Expressão  Bloco_ou_Comando [else Bloco_ou_Comando]
+Repetição -> while (21) Expressão (22) Bloco_ou_Comando (23)
+Teste -> if Expressão (24)  Bloco_ou_Comando (25)[else Bloco_ou_Comando] (26)
 Operadores_Relacional -> =  | !=  | < | >  | <=  | >=
 Expressão -> Expressão1_1 (18) [Operadores_Relacional Expressão1_2(19) ] OK
 Expressão1 -> [-] Expressão2_1(16)  {(-  | +  | ||  )  Expressão2_2 (17)} OK
@@ -733,5 +734,114 @@ aa0
         mov [M+id.end], al
 }
 
-Repetição -> while Expressão  Bloco_ou_Comando
+(21) {
+    RotInicioWhile:
+}
 
+(22) {
+    mov eax, [M+Expressão.end]
+    cmp eax, 1
+    jne RotFim
+}
+
+(23) {
+    jmp RotInicioWhile
+    RotFim:
+}
+
+(24) {
+    mov eax, [M+Expressão.end]
+    cmp eax, 1
+    jne RotElse
+}
+
+(25) {
+    jmp RotFim
+    RotElse:
+}
+
+(26) {
+    RotFim:
+}
+
+readln"("id ")" (27) ; |
+
+(27) {
+    //buffer no código do professor será um novo temporario
+    novoTemp = getNewTemp()
+    se id.type == string
+        mov rsi, M+novoTemp
+        mov rdx, 100h ;tamanho do buffer
+        mov rax, 0 ;chamada para leitura
+        mov rdi, 0 ;leitura do teclado
+        syscall
+
+        mov rsi, M+novoTemp
+        mov rdi, M+id.end
+        mov ebx, 0
+        Rot0:
+        mov al, 0
+        mov [rdi], al
+        add rdi, 1
+        add ebx, 1
+        cmp ebx, 255
+        jne Rot0
+
+        mov rdi, M+id.end
+        Rot1:
+        mov al, [rsi]
+        mov [rdi], al
+        add rdi, 1
+        add rsi, 1
+        cmp al, 10
+        jne Rot1
+        sub rdi, 1
+        mov al, 0
+        mov [rdi], al
+
+        id.size = Expressão_2.size
+    se id.type == char
+        mov rsi, M+novoTemp
+        mov rdx, 100h ;tamanho do buffer
+        mov rax, 0 ;chamada para leitura
+        mov rdi, 0 ;leitura do teclado
+        syscall
+        mov rsi, M+novoTemp
+        mov al, [rsi]
+        mov [M+id.end], al
+
+    se id.type == float
+
+    se id.type == int
+        mov eax, 0 ;acumulador
+        mov ebx, 0 ;caractere
+        mov ecx, 10 ;base 10
+        mov dx, 1 ;sinal
+        mov rsi, M+novoTemp ;end. buffer
+        mov bl, [rsi] ;carrega caractere
+        cmp bl, '-' ;sinal - ?
+        jne Rot0 ;se dif -, salta
+        mov dx, -1 ;senão, armazena -
+        add rsi, 1 ;inc. ponteiro string
+        mov bl, [rsi] ;carrega caractere
+        Rot0:
+        push dx ;empilha sinal
+        mov edx, 0 ;reg. multiplicação
+        Rot1:
+        cmp bl, 0Ah ;verifica fim string
+        je Rot2 ;salta se fim string
+        imul ecx ;mult. eax por 10
+        sub bl, '0' ;converte caractere
+        add eax, ebx ;soma valor caractere
+        add rsi, 1 ;incrementa base
+        mov bl, [rsi] ;carrega caractere
+        jmp Rot1 ;loop
+        Rot2:
+        pop cx ;desempilha sinal
+        cmp cx, 0
+        jg Rot3
+        neg eax ;mult. sinal
+        Rot3:
+        mov [M+id.end], eax
+
+}
