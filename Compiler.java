@@ -1171,7 +1171,63 @@ class CodeGenerator {
                         "mov [rdi], al\n";
                 break;
             case REAL:
-
+                label0 = getNewLabel();
+                label1 = getNewLabel();
+                String label2 = getNewLabel();
+                String label3 = getNewLabel();
+                newTemporary = getNewTemporaryAddress(128);
+                generatedCode+="mov rsi, M+"+newTemporary+"\n" +
+                        "mov rdx, 100h ;tamanho do buffer\n" +
+                        "mov rax, 0 ;chamada para leitura\n" +
+                        "mov rdi, 0 ;leitura do teclado\n" +
+                        "syscall\n" +
+                        "mov rax, 0 ;acumul. parte int.\n" +
+                        "subss xmm0,xmm0 ;acumul. parte frac.\n" +
+                        "mov rbx, 0 ;caractere\n" +
+                        "mov rcx, 10 ;base 10\n" +
+                        "cvtsi2ss xmm3,rcx ;base 10\n" +
+                        "movss xmm2,xmm3 ;potência de 10\n" +
+                        "mov rdx, 1 ;sinal\n" +
+                        "mov rsi, M+"+newTemporary+"\n" +
+                        "mov bl, [rsi] ;carrega caractere\n" +
+                        "cmp bl, '-' ;sinal - ?\n" +
+                        "jne "+label0+"\n"+
+                        "mov rdx, -1 ;senão, armazena -\n" +
+                        "add rsi, 1 ;inc. ponteiro string\n" +
+                        "mov bl, [rsi] ;carrega caractere\n" +
+                        label0+":\n" +
+                        "push rdx ;empilha sinal\n" +
+                        "mov rdx, 0 ;reg. multiplicação\n" +
+                        label1 + ":\n" +
+                        "cmp bl, 0Ah ;verifica fim string\n" +
+                        "je "+label2+"\n" +
+                        "cmp bl, '.' ;senão verifica ponto\n" +
+                        "je "+label3+"\n" +
+                        "imul ecx ;mult. eax por 10\n" +
+                        "sub bl, '0' ;converte caractere\n" +
+                        "add eax, ebx ;soma valor caractere\n" +
+                        "add rsi, 1 ;incrementa base\n" +
+                        "mov bl, [rsi] ;carrega caractere\n" +
+                        "jmp "+label1+"\n" +
+                        label3+":\n" +
+                        ";calcula parte fracionária em xmm0\n" +
+                        "add rsi, 1 ;inc. ponteiro string\n" +
+                        "mov bl, [rsi] ;carrega caractere\n" +
+                        "cmp bl, 0Ah ;*verifica fim string\n" +
+                        "je "+label2+"\n"+
+                        "sub bl, '0' ;converte caractere\n" +
+                        "cvtsi2ss xmm1,rbx ;conv real\n" +
+                        "divss xmm1,xmm2 ;transf. casa decimal\n" +
+                        "addss xmm0,xmm1 ;soma acumul.\n" +
+                        "mulss xmm2,xmm3 ;atualiza potência\n" +
+                        "jmp "+label3+"\n"+
+                        label2+":\n"+
+                        "cvtsi2ss xmm1,rax ;conv parte inteira\n" +
+                        "addss xmm0,xmm1 ;soma parte frac.\n" +
+                        "pop rcx ;desempilha sinal\n" +
+                        "cvtsi2ss xmm1,rcx ;conv sinal\n" +
+                        "mulss xmm0,xmm1 ;mult. sinal\n" +
+                        "movss [M+"+id.symbol.address+"], xmm0\n";
                 break;
             case CHARACTER:
                 newTemporary = getNewTemporaryAddress(1);
@@ -1187,8 +1243,8 @@ class CodeGenerator {
             case INTEGER:
                 label0 = getNewLabel();
                 label1 = getNewLabel();
-                String label2 = getNewLabel();
-                String label3 = getNewLabel();
+                label2 = getNewLabel();
+                label3 = getNewLabel();
                 newTemporary = getNewTemporaryAddress(12);
                 generatedCode+="mov rsi, M+"+newTemporary+"\n" +
                         "mov rdx, 0Ch ;tamanho do buffer\n" +

@@ -1,37 +1,16 @@
-/*int i <- 0;
+int n;
 
-const MAX = 200;
+writeln("Digite o valor de x a ser calculado");
 
-while (i <= MAX) {
-    if i mod 2 = 0
-        writeln("eh par ", i);
-    else
-        writeln("eh impar ", i);
+readln(n);
+
+int fat <- 1;
+
+int i <-1;
+
+while i<=n {
+    fat<- fat *i;
     i <- i+1;
 }
-*/
-/*
-string nome <- "Gabriel";
-string nomeAnterior;
-nomeAnterior<- nome;
-writeln(nome);
-readln(nome);
-writeln(nome = nomeAnterior);
 
-
-char c <-'a';
-
-writeln(c);
-
-readln(c);
-
-writeln(c);*/
-
-
-int x <-5;
-writeln(x);
-
-readln(x);
-
-writeln(x+5);
-
+writeln("O valor do fatorial eh: ", fat);
