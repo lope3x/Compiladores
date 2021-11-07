@@ -1,3 +1,9 @@
+TP01, T02, T03 e T04 - Compiladores - 2021/2
+G07 - Bruno Duarte de Paula Assis (639985), Gabriel Lopes Ferreira(619148), Giovanni Carlos Guaceroni(636206)
+
+Gramática da linguagem utilizando expressões regulares e com esquema de tradução para a varificação de tipos implementado
+pelo analisador semântico.
+
 Start -> {Declaração; | Comando} EOF
 Bloco_ou_Comando -> Comando | Bloco
 Bloco -> "{"{Comando}"}"
@@ -19,7 +25,6 @@ Expressão6 -> const_value (36) | id (4) ["[" Expressão (37) "]"] (38)
 
 
 Esquema de Tradução:
-Done
 1 {
     se (const_value.type != inteiro && const_value.type != real) && Declaração.isNegative:
         error
@@ -28,22 +33,23 @@ Done
     senão:
         error
 }
-Done
+
 2 {
     se id.class == null:
         id.class = VAR, id.type = Declaração_Init.type
     senão:
         error
 }
-Done
+
 3 {
     Declaração_Init.type = Tipo.type
 }
+
 4 {
     se id.class == null então:
         error
  }
-Done
+
 5 {
       se id.class == null ou id.class == constante então:
           error
@@ -244,19 +250,19 @@ Expressão1 -> [- (21)] Expressão2_1 (22) {(- (18) | + (19) | || (20) )  Expres
     se !Expressão6.hasStringAccess
         Expressão6.type = id.type
 }
-Done
+
 39 {
     Tipo.type = int
 }
-Done
+
 40 {
     Tipo.type = float
 }
-Done
+
 41 {
     Tipo.type = string
 }
-Done
+
 42 {
     Tipo.type = char
 }
@@ -267,7 +273,6 @@ Done
 44 {
    expression4.type = float
 }
-Declaração_Init ->  id (2) [<- [-(45)] const_value (46) ]
 
 45 {
    Declaração_Init.isNegative = true

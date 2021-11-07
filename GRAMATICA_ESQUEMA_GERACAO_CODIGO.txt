@@ -1,35 +1,38 @@
+TP01, T02, T03 e T04 - Compiladores - 2021/2
+G07 - Bruno Duarte de Paula Assis (639985), Gabriel Lopes Ferreira(619148), Giovanni Carlos Guaceroni(636206)
+
+Gramática da linguagem utilizando expressões regulares com o esquema de geração de código como a geração de código
+só ocorre após a validação do semântico não há nenhuma validação de tipos no esquema a abaixo.
+
 Start -> {Declaração; | Comando} EOF
 Bloco_ou_Comando -> Comando | Bloco
 Bloco -> "{"{Comando}"}"
 Tipo -> int  | float  | string  | char
-Declaração -> Tipo  Declaração_Init {, Declaração_Init} | const id = [-] const_value (5) OK
-Declaração_Init ->  id  [<- [-] const_value (5)] (6) OK
+Declaração -> Tipo  Declaração_Init {, Declaração_Init} | const id = [-] const_value (5)
+Declaração_Init ->  id  [<- [-] const_value (5)] (6)
 Escrita -> "("Expressão(3) {, Expressão(3)} ")"(4)
-Comando -> id  ["["Expressão_1"]"] <- Expressão_2 (20) ; | OK
-        Repetição | Teste | ; |
-        readln"("id  ")" ; |
-        (write (1) | writeln (2)) Escrita ; OK
+Comando -> id  ["["Expressão_1"]"] <- Expressão_2 (20) ; | Repetição | Teste | ; readln"("id  ")" ; |(write (1) | writeln (2)) Escrita ;
 Repetição -> while (21) Expressão (22) Bloco_ou_Comando (23)
 Teste -> if Expressão (24)  Bloco_ou_Comando (25)[else Bloco_ou_Comando] (26)
 Operadores_Relacional -> =  | !=  | < | >  | <=  | >=
-Expressão -> Expressão1_1 (18) [Operadores_Relacional Expressão1_2(19) ] OK
-Expressão1 -> [-] Expressão2_1(16)  {(-  | +  | ||  )  Expressão2_2 (17)} OK
-Expressão2 -> Expressão3_1(14) {(* | && | / | div | mod) Expressão3_2 (15) } OK
-Expressão3 -> {!} Expressão4 (13) OK
-Expressão4 -> ( (int  | float ) "("Expressão ")" (12) | Expressão5 (11) ) OK
-Expressão5 -> "(" Expressão  ")"(10) | Expressão6 (9) OK
-Expressão6 -> const_value (7) | id  ["[" Expressão  "]"] (8) OK
-//NUNCA PODDEMOS MODIFICAR NADA QUE ESTÁ NO ENDEREÇO DE RETORNO DE UMA EXPRESSÃO, SOMENTE CONSULTAR.
+Expressão -> Expressão1_1 (18) [Operadores_Relacional Expressão1_2(19) ]
+Expressão1 -> [-] Expressão2_1(16)  {(-  | +  | ||  )  Expressão2_2 (17)}
+Expressão2 -> Expressão3_1(14) {(* | && | / | div | mod) Expressão3_2 (15) }
+Expressão3 -> {!} Expressão4 (13)
+Expressão4 -> ( (int  | float ) "("Expressão ")" (12) | Expressão5 (11) )
+Expressão5 -> "(" Expressão  ")"(10) | Expressão6 (9)
+Expressão6 -> const_value (7) | id  ["[" Expressão  "]"] (8)
 
-Done
+
+
 (1) {
     escrita.isWriteLn = false
 }
-Done
+
 (2) {
     escrita.isWriteLn = true
 }
-//Lembrar de trocar rotulos do print para rotulos gerados em tempo de compilação
+
 (3) {
     //print
     se expressão.type == String:
@@ -167,34 +170,6 @@ Done
         syscall; chamada do sistema
         dataCount+=1; //java
 }
-Declaração_Init ->  id [<- [-] const_value (5)] (6)
-Colchete if else se tiver init é db se não é resb
-
-
-string x <- "nome"; // DB direto  x.size = "nome".size
-int y <-5;
-db "nome",0
-dd 5
-x <- "escola";// o que ta embaixo
-//Atribuição de string a um id
-mov rdi, M+x.end
-mov rsi, M+exp.end
-Rot1:
-mov al, [rsi]
-mov [rdi], al
-add rdi, 1
-add rsi, 1
-cmp al, 0
-jne Rot1
-
-//Adicionar 0 no lugar do \n
-readln(x);
-mov rsi, M+x.end
-mov rdx, x.size ;tamanho do buffer
-mov rax, 0 ;chamada para leitura
-mov rdi, 0 ;leitura do teclado
-syscall
-
 
 (5) {
     se const_value.type == String:
@@ -262,7 +237,7 @@ syscall
          dataCount+= 1//java
 }
 
-Done
+
 (7) {
     se const_value.type == String:
         expressão6.address = dataCount//java
@@ -297,7 +272,7 @@ Done
         section .text:
         dataCount+= 1//java
 }
-Done
+
 (8) {
     se expression6.hasStringAccess:
         mov rax, M+id.end ;endereço base da string
@@ -314,7 +289,6 @@ Done
 
 }
 
-Expressão5 -> "(" Expressão  ")"(10) | Expressão6 (9)
 
 (9) {
     Expressão5.address = expressão6.address
@@ -331,7 +305,7 @@ Expressão5 -> "(" Expressão  ")"(10) | Expressão6 (9)
     expressão4.size = expressão5.size
 }
 
-Done
+
 (12) {
    se expression4Type == int:
         se Expressão.type == int:
@@ -359,7 +333,6 @@ Done
 
 }
 
-Done
 (13) {
     se shouldNegateExpression:
         novotemp = generateNovoTemp()//java
@@ -375,12 +348,13 @@ Done
 
 }
 
-Done
+
 (14) {
     expressão2.end = Expressão3_1.end
     expressão2.size = Expressão3_1.size
 }
-Expressão2 -> Expressão3_1(14) {(* | && | / | div | mod) Expressão3_2 (15) } Falta Operações
+
+
 (15) {
     novoTemp = getNewTemp()//java
     se Expressão2.operator == *
@@ -457,7 +431,7 @@ Expressão2 -> Expressão3_1(14) {(* | && | / | div | mod) Expressão3_2 (15) } 
     Expressão2.end = novoTemp
 
 }
-Done
+
 (16) {
     se expressão1.isNegative:
         novotemp = generateNovoTemp()//java
@@ -553,15 +527,7 @@ Done
 }
 
 
-Operadores_Relacional -> =  | !=  | < | >  | <=  | >=
-Expressão -> Expressão1_1 (18) [Operadores_Relacional Expressão1_2(19) ] Falta Operações
-
-ga02
-ga05
-
 (19) {
-a0
-aa0
 
     novoTemp = newTemporary(4)
     se Expressão.type == string:
@@ -683,7 +649,6 @@ aa0
 }
 
 
-
 (20) {
     se id.type == string:
         se Expressão_2.type == char:
@@ -764,10 +729,8 @@ aa0
     RotFim:
 }
 
-readln"("id ")" (27) ; |
 
 (27) {
-    //buffer no código do professor será um novo temporario
     novoTemp = getNewTemp()
     se id.type == string
         mov rsi, M+novoTemp
