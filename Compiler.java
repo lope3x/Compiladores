@@ -1287,6 +1287,9 @@ class CodeGenerator {
 
 }
 
+/**
+ * Classe que indica o tipo, endereço e tamanho do retorno de uma expressão
+ */
 class ExpressionReturn {
     Type type;
     long address;
@@ -1311,7 +1314,9 @@ class ExpressionReturn {
         System.out.println(this);
     }
 }
-
+/**
+ * Classe em que implementamos o nosso analisador semântico.
+ */
 class SemanticAnalyzer {
     CodeGenerator codeGenerator;
     int lastTokenReadLine;//Usado pelo semântico para imprimir o error
@@ -1319,6 +1324,14 @@ class SemanticAnalyzer {
     SemanticAnalyzer(CodeGenerator codeGenerator) {
         this.codeGenerator = codeGenerator;
     }
+
+    /**
+     * Método responsável pela ação semântica 1
+     * @param id LexicalRegister do identificador
+     * @param constValue LexicalRegister da constante
+     * @param isNegative Se possui sinal de negativo
+     * @throws CompilerError
+     */
     public void semanticAction1(LexicalRegister id, LexicalRegister constValue, boolean isNegative) throws CompilerError {
         Type constValueType = constValue.constType.toType();
         if((constValueType !=Type.INTEGER && constValueType != Type.REAL) && isNegative){
@@ -1333,6 +1346,12 @@ class SemanticAnalyzer {
         }
     }
 
+    /**
+     * Método responsável pela ação semântica 2
+     * @param id  LexicalRegister do identificador
+     * @param declarationInitType Tipo do identificador na declaração
+     * @throws CompilerError
+     */
     public void semanticAction2(LexicalRegister id, Type declarationInitType) throws CompilerError {
         if (id.symbol.idClass == null) {
             id.symbol.idClass = Class.VAR;
@@ -1343,12 +1362,22 @@ class SemanticAnalyzer {
         }
     }
 
+    /**
+     * Método responsável pela ação semântica 4
+     * @param id LexicalRegister do identificador
+     * @throws CompilerError
+     */
     public void semanticAction4(LexicalRegister id) throws CompilerError {
         if(id.symbol.idClass == null) {
             throw new CompilerError("identificador nao declarado ["+ id.symbol.lexeme +"].", lastTokenReadLine);
         }
     }
 
+    /**
+     * Método responsável pela ação semântica 5
+     * @param id LexicalRegister do identificador
+     * @throws CompilerError
+     */
     public void semanticAction5(LexicalRegister id) throws CompilerError {
         if(id.symbol.idClass == null) {
             throw new CompilerError("identificador nao declarado ["+ id.symbol.lexeme +"].", lastTokenReadLine);
@@ -1358,6 +1387,12 @@ class SemanticAnalyzer {
         }
     }
 
+    /**
+     * Método responsável pela ação semântica 6
+     * @param idType tipo do identificador
+     * @param expressionType tipo da expressão
+     * @throws CompilerError
+     */
     public void semanticAction6(Type idType, Type expressionType) throws CompilerError {
         if(idType != Type.STRING) {
             throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
@@ -1367,6 +1402,13 @@ class SemanticAnalyzer {
         }
     }
 
+    /**
+     * Método responsável pela ação semântica 7
+     * @param hasStringAccess se está acessando a posição de uma string
+     * @param expressionType tipo da expressão
+     * @param idType tipo do id
+     * @throws CompilerError
+     */
     public void semanticAction7(boolean hasStringAccess, Type expressionType, Type idType) throws CompilerError {
         if(hasStringAccess && (expressionType != Type.CHARACTER)) {
             throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
@@ -1381,12 +1423,25 @@ class SemanticAnalyzer {
         }
     }
 
+    /**
+     * Método responsável pela ação semântica 8
+     * @param expressionType tipo da expressão
+     * @throws CompilerError
+     */
     public void semanticAction8(Type expressionType) throws CompilerError {
         if(expressionType != Type.BOOLEAN) {
             throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
     }
 
+    /**
+     * Método responsável pela ação semântica 9
+     * @param expression1_1Data ExpressionReturn da Expressão1_1
+     * @param expression1_2Type Tipo da Expressão1_2
+     * @param operator Operador relacional
+     * @return ExpressionReturn da expressão
+     * @throws CompilerError
+     */
     public ExpressionReturn semanticAction10(ExpressionReturn expression1_1Data, Type expression1_2Type, Token operator) throws CompilerError {
         ExpressionReturn expressionReturn = new ExpressionReturn(expression1_1Data.type, expression1_1Data.address, 4);
         if((expression1_1Data.type == Type.INTEGER || expression1_1Data.type == Type.REAL) && expression1_2Type == Type.CHARACTER) {
@@ -1409,6 +1464,14 @@ class SemanticAnalyzer {
         return expressionReturn;
     }
 
+    /**
+     * Método responsável pela ação semântica 17
+     * @param expression2_2Type Tipo da Expressão2_2
+     * @param operator operador usado
+     * @param expression1Data ExpressionReturn da Expressão1
+     * @return ExpressionReturn da expressão
+     * @throws CompilerError
+     */
     public ExpressionReturn semanticAction17(Type expression2_2Type, Token operator, ExpressionReturn expression1Data) throws CompilerError {
         Type expressionType = expression1Data.type;
         if(expression1Data.type == Type.STRING || expression1Data.type  == Type.CHARACTER || expression2_2Type == Type.STRING || expression2_2Type == Type.CHARACTER) {
@@ -1428,6 +1491,13 @@ class SemanticAnalyzer {
         return new ExpressionReturn(expressionType, expression1Data.address, expression1Data.size);
     }
 
+    /**
+     * Método responsável pela ação semântica 22
+     * @param expression2_1Return ExpressionReturn da Expressão2_1
+     * @param isNegative se possui sinal de negativo
+     * @return ExpressionReturn da expressão
+     * @throws CompilerError
+     */
     public ExpressionReturn semanticAction22(ExpressionReturn expression2_1Return, boolean isNegative) throws CompilerError {
         if((expression2_1Return.type != Type.INTEGER && expression2_1Return.type != Type.REAL) && isNegative) {
             throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
@@ -1436,6 +1506,14 @@ class SemanticAnalyzer {
         return codeGenerator.codeGenerate16(isNegative, expression2_1Return);
     }
 
+    /**
+     * Método responsável pela ação semântica 23
+     * @param expression3_2Type Tipo da Expressão3_2
+     * @param operator operador usado
+     * @param expression2Data ExpressionReturn da Expressão2
+     * @return ExpressionReturn da expressão
+     * @throws CompilerError
+     */
     public ExpressionReturn semanticAction23(Type expression3_2Type, Token operator, ExpressionReturn expression2Data) throws CompilerError {
         Type expressionType;
         if(expression2Data.type == Type.STRING || expression2Data.type == Type.CHARACTER || expression3_2Type == Type.STRING || expression3_2Type == Type.CHARACTER) {
@@ -1468,6 +1546,14 @@ class SemanticAnalyzer {
     }
 
 
+    /**
+     * Método responsável pela ação semântica 30
+     * @param expression3HasExclamationOperator se possui sinal de negação
+     * @param expression4Return ExpressionReturn da Expressão4
+     * @param shouldNegateExpression se expressão irá ser negada ou não
+     * @return ExpressionReturn da expressão
+     * @throws CompilerError
+     */
     public ExpressionReturn semanticAction30(boolean expression3HasExclamationOperator, ExpressionReturn expression4Return, boolean shouldNegateExpression) throws CompilerError {
         if (expression3HasExclamationOperator && (expression4Return.type != Type.BOOLEAN)){
             throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
@@ -1476,22 +1562,35 @@ class SemanticAnalyzer {
         return codeGenerator.codeGenerate13(shouldNegateExpression, expression4Return);
     }
 
-    public ExpressionReturn semanticAction31(Type expression3_1Type) {
-        return new ExpressionReturn(expression3_1Type, 0, 0);
-    }
-
+    /**
+     * Método responsável pela ação semântica 32
+     * @param expressionType tipo da expressão
+     * @throws CompilerError
+     */
     public void semanticAction32(Type expressionType) throws CompilerError {
         if(expressionType != Type.INTEGER && expressionType != Type.REAL) {
             throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
     }
 
+    /**
+     * Método responsável pela ação semântica 37
+     * @param expressionType tipo da expressão
+     * @throws CompilerError
+     */
     public void semanticAction37(Type expressionType) throws CompilerError {
         if(expressionType != Type.INTEGER) {
             throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
         }
     }
 
+    /**
+     * Método responsável pela ação semântica 46
+     * @param declarationInitType tipo do identificador na declaração
+     * @param constValueType tipo da constante
+     * @param isNegative se possui sinal de negativo
+     * @throws CompilerError
+     */
     public void semanticAction46(Type declarationInitType, Type constValueType, boolean isNegative) throws CompilerError {
         if((declarationInitType != Type.INTEGER && declarationInitType != Type.REAL) && isNegative) {
             throw new CompilerError("tipos incompativeis.", lastTokenReadLine);
