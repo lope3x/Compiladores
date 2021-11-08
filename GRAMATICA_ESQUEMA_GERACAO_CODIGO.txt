@@ -1,8 +1,8 @@
 TP01, T02, T03 e T04 - Compiladores - 2021/2
 G07 - Bruno Duarte de Paula Assis (639985), Gabriel Lopes Ferreira(619148), Giovanni Carlos Guaceroni(636206)
 
-Gramática da linguagem utilizando expressões regulares com o esquema de geração de código como a geração de código
-só ocorre após a validação do semântico não há nenhuma validação de tipos no esquema a abaixo.
+Gramática da linguagem utilizando expressões regulares com o esquema de geração de código. Como a geração de código
+só ocorre após a validação do semântico não há nenhuma validação de tipos no esquema abaixo.
 
 Start -> {Declaração; | Comando} EOF
 Bloco_ou_Comando -> Comando | Bloco

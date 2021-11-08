@@ -10,7 +10,8 @@ int i <-1;
 
 while i<=n {
     fat<- fat *i;
-    i <- i+1;
+    i <- 0+1;
 }
 
 writeln("O valor do fatorial eh: ", fat);
+

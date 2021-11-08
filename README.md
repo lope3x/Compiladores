@@ -13,6 +13,7 @@
 
 ##Descrição dos arquivos
 - No arquivo Compiler.java temos o compilador, com a implementação dos analisadores Léxico, Sintático e Semântico, além da geração de código.
-- Dividimos o nosso esquema de tradução em dois arquivos, um deles com o esquema de tradução com a verificação de tipos o outro com o esquema de tradução com a geração de código.
+- No arquivo ``Lexico.png`` temos uma imagem do autômato implementado pelo analisador léxico.
+- Para ficar melhor organizado, dividimos o nosso esquema de tradução em dois arquivos, um deles com o esquema de tradução com a verificação de tipos e o outro com o esquema de tradução com a geração de código.
 - No arquivo ``GRAMATICA_ESQUEMA_TRADUCAO_SEMANTICO`` temos o nosso esquema de tradução para verificação de tipos da linguagem.
 - No arquivo ``GRAMATICA_ESQUEMA_GERACAO_CODIGO`` temos o nosso esquema de tradução para geração de código assembly, ele foi feito considerando que a verificação semântica já ocorreu e não temos problema semânticos.

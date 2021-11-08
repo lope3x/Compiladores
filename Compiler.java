@@ -1,5 +1,5 @@
 /**
- *  TP01 e T02 - Compiladores - 2021/2
+ *  TP01, T02, T03 e T04 - Compiladores - 2021/2
  *  G07 - Bruno Duarte de Paula Assis (639985), Gabriel Lopes Ferreira(619148), Giovanni Carlos Guaceroni(636206)
  */
 
@@ -57,8 +57,8 @@ enum Token {
     public final String name;
 
     Token(String name) {
-    this.name = name;
-}
+        this.name = name;
+    }
 }
 
 /**
@@ -262,7 +262,7 @@ class SymbolTableSearchResult {
 
 /**
  * Classe que representa um símbolo, com as propriedades tipo do token e seu respectivo lexema.
-*/
+ */
 
 class Symbol {
     Token tokenType;
@@ -297,12 +297,18 @@ class Symbol {
     }
 }
 
+/**
+ * Classe em que implementamos a nossa geração de código.
+ */
 class CodeGenerator {
     String generatedCode = "";
-    long dataCount = 65536;
-    private int temporaryCount = 0;
-    private int labelCount = 0;
+    long dataCount = 65536; //Primeira posição de memória válida, após os temporários
+    private int temporaryCount = 0; //Contador para os temporários
+    private int labelCount = 0; //Contador de rótulos do programa
 
+    /**
+     * Inicio da geração de código, reservando 10000h(endereços na memória) para os temporários.
+     */
     CodeGenerator() {
         generatedCode+="section .data\n" +
                 "M:\n" +
@@ -312,6 +318,7 @@ class CodeGenerator {
                 "_start:\n";
     }
 
+    //Método para gerar o arquivo .asm
     public void printCode() {
         generatedCode+=generateEndOfCode();
         File output = new File("arq.asm");
@@ -330,28 +337,43 @@ class CodeGenerator {
 
     }
 
+    /**
+     * Método para a geração da parte final do código assembly
+     */
     private String generateEndOfCode() {
         return "mov rax, 60\n" +
                 "mov rdi, 0\n" +
                 "syscall\n";
     }
 
+    /**
+     * Método para gerar um novo rótulo
+     */
     public String getNewLabel() {
         String newLabel = "Label"+labelCount;
         labelCount++;
         return newLabel;
     }
 
+    /**
+     * Método para obter o endereço de um novo temporário
+     */
     public long getNewTemporaryAddress(int sizeOfTemporary) {
         long address = temporaryCount;
         temporaryCount+=sizeOfTemporary;
         return address;
     }
-
+    /**
+     * Método para resetar o contador de temporários
+     */
     public void resetTemporaryCount() {
         temporaryCount = 0;
     }
 
+    /**
+     * Método responsável pela geração de código 3
+     * @param expressionReturn ExpressionReturn da expressão a ser impressa
+     */
     public void codeGenerate3(ExpressionReturn expressionReturn) {
         switch (expressionReturn.type){
             case STRING:
@@ -488,6 +510,10 @@ class CodeGenerator {
         }
     }
 
+    /**
+     * Método responsável pela geração de código 4
+     * @param isWriteLn Se é um writeln, imprime o \n (byte 10)
+     */
     public void codeGenerate4(boolean isWriteLn) {
         if (isWriteLn) {
             generatedCode += "section .data\n" +
@@ -503,6 +529,12 @@ class CodeGenerator {
         }
     }
 
+    /**
+     * Método responsável pela geração de código 5
+     * @param constvalue LexicalRegister da constante
+     * @param id LexicalRegister do identificador
+     * @param isNegative Se a constante é negativa ou não
+     */
     public void codeGenerate5(LexicalRegister constvalue, LexicalRegister id, boolean isNegative) {
         Type constType = constvalue.constType.toType();
 
@@ -547,14 +579,18 @@ class CodeGenerator {
         }
     }
 
+    /**
+     * Método responsável pela geração de código 6
+     * @param id LexicalRegister do identificador
+     */
     public void codeGenerate6(LexicalRegister id) {
         switch (id.symbol.idType){
             case STRING:
                 id.symbol.address = dataCount;
                 id.symbol.size = 255;
                 generatedCode += "section .data\n"+
-                                "resb 256\n"+
-                                "section .text\n";
+                        "resb 256\n"+
+                        "section .text\n";
                 dataCount+=256;
                 break;
             case BOOLEAN:
@@ -578,6 +614,10 @@ class CodeGenerator {
         }
     }
 
+    /**
+     * Método responsável pela geração de código 7
+     * @param constValue LexicalRegister da constante
+     */
     public ExpressionReturn codeGenerate7(LexicalRegister constValue) {
         long expression6Address = 0;
         int expression6Size = 0;
@@ -615,6 +655,12 @@ class CodeGenerator {
         return new ExpressionReturn(constValue.constType.toType(), expression6Address, expression6Size);
     }
 
+    /**
+     * Método responsável pela geração de código 8
+     * @param hasStringAccess Se tem o acesso a posição de uma string ou não
+     * @param expressionReturn ExpressionReturn da expressão
+     * @param id LexicalRegister do identificador
+     */
     public ExpressionReturn codeGenerate8(boolean hasStringAccess, ExpressionReturn expressionReturn, LexicalRegister id) {
         if(hasStringAccess) {
             long newTemporary = getNewTemporaryAddress(1);
@@ -630,6 +676,11 @@ class CodeGenerator {
         }
     }
 
+    /**
+     * Método responsável pela geração de código 12
+     * @param expression4Type Type da expression4
+     * @param expressionReturn ExpressionReturn da expressão a ser convertida
+     */
     public ExpressionReturn codeGenerate12(Type expression4Type, ExpressionReturn expressionReturn) {
         if(expression4Type == Type.INTEGER){
             if(expressionReturn.type == Type.INTEGER) {
@@ -658,6 +709,11 @@ class CodeGenerator {
         }
     }
 
+    /**
+     * Método responsável pela geração de código 13
+     * @param shouldNegateExpression Se a expressão deve ser negativada ou não
+     * @param expression4Return ExpressionReturn da expressão 4
+     */
     public ExpressionReturn codeGenerate13(boolean shouldNegateExpression, ExpressionReturn expression4Return){
         if(shouldNegateExpression) {
             long newTemporary = getNewTemporaryAddress(expression4Return.size);
@@ -672,6 +728,12 @@ class CodeGenerator {
         }
     }
 
+    /**
+     * Método responsável pela geração de código 15
+     * @param expression2Data ExpressionReturn da expressão 2
+     * @param expression3_2Return ExpressionReturn da expressão a ser avaliada
+     * @param operator Token para saber qual operação será realizada
+     */
     public ExpressionReturn codeGenerate15(ExpressionReturn expression2Data, ExpressionReturn expression3_2Return, Token operator) {
         long newTemporary = getNewTemporaryAddress(4);
         Type expressionType = expression2Data.type;
@@ -697,11 +759,11 @@ class CodeGenerator {
                     if(expression3_2Return.type == Type.REAL) {
                         expressionType = Type.REAL;
                         generatedCode += "mov eax, [M+"+expression2Data.address+"]\n" +
-                         "cdqe\n" +
-                         "cvtsi2ss xmm0,rax\n" +
-                         "movss xmm1, [M+"+expression3_2Return.address+"]\n" +
-                         "mulss xmm0, xmm1\n" +
-                         "movss [M+"+newTemporary+"], xmm0\n";
+                                "cdqe\n" +
+                                "cvtsi2ss xmm0,rax\n" +
+                                "movss xmm1, [M+"+expression3_2Return.address+"]\n" +
+                                "mulss xmm0, xmm1\n" +
+                                "movss [M+"+newTemporary+"], xmm0\n";
 
                     }
                     else {
@@ -778,6 +840,11 @@ class CodeGenerator {
         return new ExpressionReturn(expressionType, newTemporary, 4);
     }
 
+    /**
+     * Método responsável pela geração de código 16
+     * @param isNegative Para saber se o número é negativo
+     * @param expression2_1Return ExpressionReturn da expressão a ser avaliada
+     */
     public ExpressionReturn codeGenerate16(boolean isNegative, ExpressionReturn expression2_1Return) {
         if(isNegative){
             long newTemporaryAddress = getNewTemporaryAddress(4);
@@ -803,7 +870,12 @@ class CodeGenerator {
         }
     }
 
-
+    /**
+     * Método responsável pela geração de código 17
+     * @param expression1Data ExpressionReturn da expressão 1
+     * @param expression2_2Return ExpressionReturn da expressão a ser avaliada
+     * @param operator Token para saber qual operação será realizada
+     */
     public ExpressionReturn codeGenerate17(ExpressionReturn expression1Data,ExpressionReturn expression2_2Return,Token operator) {
         long newTemporary = getNewTemporaryAddress(4);
         Type expressionType = expression1Data.type;
@@ -893,6 +965,12 @@ class CodeGenerator {
         return new ExpressionReturn(expressionType, newTemporary, 4);
     }
 
+    /**
+     * Método responsável pela geração de código 19
+     * @param operator Token para saber qual operação será realizada
+     * @param expressionData ExpressionReturn da expressão 1
+     * @param expression1_2Return ExpressionReturn da expressão a ser avaliada
+     */
     public ExpressionReturn codeGenerate19(Token operator, ExpressionReturn expressionData, ExpressionReturn expression1_2Return) {
         long newTemporary = getNewTemporaryAddress(4);
         if(expressionData.type == Type.STRING) {
@@ -1047,6 +1125,12 @@ class CodeGenerator {
         return new ExpressionReturn(Type.BOOLEAN, newTemporary, 4);
     }
 
+    /**
+     * Método responsável pela geração de código 20
+     * @param id LexicalRegister do identificador
+     * @param expression1Return ExpressionReturn da expressão a ser utilizada como índice da string
+     * @param expression2Return ExpressionReturn da expressão a ser atribuída ao identificador
+     */
     public void codeGenerate20(LexicalRegister id, ExpressionReturn expression1Return, ExpressionReturn expression2Return) {
         switch (id.symbol.idType) {
             case STRING:
@@ -1107,36 +1191,68 @@ class CodeGenerator {
         }
     }
 
+    /**
+     * Método responsável pela geração de código 21
+     * @param labelStartWhile rótulo do começo do while
+     */
     public void codeGenerate21(String labelStartWhile) {
         generatedCode+=labelStartWhile+":\n";
     }
 
+    /**
+     * Método responsável pela geração de código 22
+     * @param labelEndWhile rótulo do final do while
+     * @param expressionReturn expression return a ser comparada
+     */
     public void codeGenerate22(String labelEndWhile, ExpressionReturn expressionReturn) {
         generatedCode+="mov eax, [M+"+expressionReturn.address+"]\n" +
                 "cmp eax, 1\n" +
                 "jne "+labelEndWhile+"\n";
     }
 
+    /**
+     * Método responsável pela geração de código 23
+     * @param labelStartWhile rótulo do começo do while
+     * @param labelEndWhile rótulo do final do while
+     */
     public void codeGenerate23(String labelStartWhile, String labelEndWhile) {
         generatedCode+="jmp "+ labelStartWhile+"\n" +
                 labelEndWhile+":\n";
     }
 
+    /**
+     * Método responsável pela geração de código 24
+     * @param expressionReturn expressão a ser comparada no if
+     * @param labelElse rótulo do else
+     */
     public void codeGenerate24(ExpressionReturn expressionReturn, String labelElse) {
         generatedCode+="mov eax, [M+"+expressionReturn.address+"]\n" +
                 "cmp eax, 1\n" +
                 "jne "+labelElse+"\n";
     }
 
+    /**
+     * Método responsável pela geração de código 25
+     * @param labelElse rótulo do else
+     * @param labelEnd rótulo do final do teste
+     */
     public void codeGenerate25(String labelElse, String labelEnd){
         generatedCode+="jmp "+labelEnd+"\n" +
                 labelElse+":\n";
     }
 
+    /**
+     * Método responsável pela geração de código 26
+     * @param labelEnd rótulo do final do teste
+     */
     public void codeGenerate26(String labelEnd) {
         generatedCode+=labelEnd+":\n";
     }
 
+    /**
+     * Método responsável pela geração de código 27
+     * @param id objeto que irá receber o valor lido do teclado
+     */
     public void codeGenerate27(LexicalRegister id) {
         switch (id.symbol.idType) {
             case STRING:
@@ -2521,7 +2637,7 @@ class LexicalAnalyzer {
      * @return boolean - se caractere é válido (true) ou não (false).
      */
     private boolean isCharHexadecimal(char c) {
-       return isCharDigit(c) || c >= 'A' && c <= 'F';
+        return isCharDigit(c) || c >= 'A' && c <= 'F';
     }
 
     /**
@@ -2594,7 +2710,7 @@ class LexicalRegister {
  * Classe responsável por realizar a leitura do código.
  */
 class CodeReader {
-    InputStreamReader reader  = new InputStreamReader(System.in);
+    InputStreamReader reader = new InputStreamReader(System.in);
 
     /**
      * Método responsável por ler o próximo byte do programa.
@@ -2641,4 +2757,3 @@ public class Compiler {
         return new SyntaxAnalyzer(lexicalAnalyzer);
     }
 }
-

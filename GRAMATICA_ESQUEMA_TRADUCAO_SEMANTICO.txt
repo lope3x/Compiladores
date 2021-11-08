@@ -1,7 +1,7 @@
 TP01, T02, T03 e T04 - Compiladores - 2021/2
 G07 - Bruno Duarte de Paula Assis (639985), Gabriel Lopes Ferreira(619148), Giovanni Carlos Guaceroni(636206)
 
-Gramática da linguagem utilizando expressões regulares e com esquema de tradução para a varificação de tipos implementado
+Gramática da linguagem utilizando expressões regulares e com esquema de tradução para a verificação de tipos, o esquema abaixo é implementado
 pelo analisador semântico.
 
 Start -> {Declaração; | Comando} EOF
